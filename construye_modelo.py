@@ -748,6 +748,9 @@ print(f"  Hora pico de fraude: {hora_pico:02d}:00h ({pico_cant} fraudes)")
 print("=" * 55)
 
 # -- System prompt con muestra REAL -----------------------
+# Construir distribucion horaria como string separado
+dist_horas = "\n".join([f"  {h:02d}:00h -> {int(fraudes_por_hora[h])} fraudes" for h in range(24)])
+
 SYSTEM_PROMPT = f"""
 Eres FraudBot, analista de fraude de un banco dominicano.
 Tienes acceso a una muestra REAL del dataset de transacciones.
@@ -761,7 +764,7 @@ ESTADISTICAS GENERALES DEL DATASET COMPLETO ({csv}):
 - Hora pico de fraude: {hora_pico:02d}:00h ({pico_cant} fraudes en esa hora)
 
 DISTRIBUCION POR HORA (fraudes del dataset completo):
-{chr(10).join([f"  {h:02d}:00h -> {int(fraudes_por_hora[h])} fraudes" for h in range(24)])}
+{dist_horas}
 
 MUESTRA REAL DE 200 FILAS (50 fraudes + 150 legitimas):
 Columnas: hora(del dia), V1,V4,V10,V12,V14,V17(patrones PCA), Amount(monto), Class(0=legitima,1=fraude)
