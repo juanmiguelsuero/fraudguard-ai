@@ -730,7 +730,7 @@ lineas_horas = []
 for h in range(24):
     cant = int(fraudes_por_hora[h])
     lineas_horas.append("  %02d:00h -> %d fraudes" % (h, cant))
-dist_horas = "\n".join(lineas_horas)
+dist_horas = chr(10).join(lineas_horas)
 
 # -- Muestra real del dataset -----------------------------
 cols = ["Time", "V1", "V4", "V10", "V12", "V14", "V17", "Amount", "Class"]
