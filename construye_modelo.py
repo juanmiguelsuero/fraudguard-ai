@@ -13,7 +13,7 @@ st.set_page_config(
 )
 
 DEEPSEEK_API_KEY = "sk-23261b5ee48143d38288c5a86ebb156f"
-DATASET_LINK = "https://raw.githubusercontent.com/juanmiguelsuero/fraudguard-ai/main/creditcard_mini.csv"  # 50k filas, ~25MB
+DATASET_LINK = "https://drive.google.com/uc?export=download&id=1C22ha08OcMeudP2dUnybXGo7OoMwjNRs"  # 50k filas, ~25MB
 LOGO_URL = "https://hackconrd.org/uploads/2024/12/logo1200x600-1-768x175.png"
 HACKCON_URL = "https://hackconrd.org"
 
@@ -157,7 +157,7 @@ Abre la terminal (cmd en Windows, Terminal en Mac/Linux) y pega este comando:</p
 <p style='color:#fff;font-weight:600;margin-bottom:4px;'>Descarga el dataset</p>
 <p style='color:#a0b4cc;margin-bottom:10px;'>
 Guárdalo en la misma carpeta donde estará tu archivo <b style='color:#fff;'>fraude.py</b>.</p>
-<a href='https://raw.githubusercontent.com/juanmiguelsuero/fraudguard-ai/main/creditcard_mini.csv' target='_blank'
+<a href='https://drive.google.com/uc?export=download&id=1C22ha08OcMeudP2dUnybXGo7OoMwjNRs' target='_blank'
    style='display:inline-block;background:linear-gradient(135deg,#00c46a,#00a855);
    color:#fff;font-weight:700;font-size:13px;padding:10px 22px;border-radius:10px;
    text-decoration:none;margin-bottom:16px;'>
@@ -204,7 +204,7 @@ pandas, numpy y scikit-learn ya vienen instalados en Colab.</p>
 <p style='color:#fff;font-weight:600;margin-bottom:4px;'>Descarga y sube el dataset</p>
 <p style='color:#a0b4cc;margin-bottom:10px;'>
 Primero descárgalo a tu computadora:</p>
-<a href='https://raw.githubusercontent.com/juanmiguelsuero/fraudguard-ai/main/creditcard_mini.csv'
+<a href='https://drive.google.com/uc?export=download&id=1C22ha08OcMeudP2dUnybXGo7OoMwjNRs'
    target='_blank'
    style='display:inline-block;background:linear-gradient(135deg,#00c46a,#00a855);
    color:#fff;font-weight:700;font-size:13px;padding:10px 22px;border-radius:10px;
