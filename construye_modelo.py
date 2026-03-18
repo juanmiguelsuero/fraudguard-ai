@@ -97,15 +97,7 @@ st.markdown(
   </a>
   <p style='color:#4a8a5a;font-size:13px;margin-top:10px;'>
     50,000 transacciones reales · 492 fraudes · Gratis</p>
-  <a href="https://raw.githubusercontent.com/juanmiguelsuero/fraudguard-ai/main/FraudGuard_HackConRD_Completo.pdf"
-     style='display:inline-block;background:linear-gradient(135deg,#c084fc,#9333ea);
-     color:#fff;font-weight:700;font-size:15px;padding:14px 36px;border-radius:12px;
-     text-decoration:none;box-shadow:0 4px 20px #c084fc44;letter-spacing:.5px;margin-top:12px;'
-     target="_blank">
-    📄 &nbsp; Descarga la Guía PDF — Llévate el código a casa
-  </a>
-  <p style='color:#9a6acc;font-size:13px;margin-top:10px;'>
-    Código completo · FraudBot RAG · Seguridad · Hoja de ruta · 5 proyectos para practicar</p>
+
 </div>
 <div style='display:flex;justify-content:center;gap:10px;margin:0 0 28px;flex-wrap:wrap;'>
   <span style='background:#0d2248;border:1px solid #1e3a7a;border-radius:20px;
