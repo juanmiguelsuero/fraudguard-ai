@@ -1,6 +1,8 @@
 # Dataset — demasiado grande para GitHub (144MB)
 # Los modelos se entrenan automáticamente al iniciar la app
 creditcard.csv
+# Mini dataset SI se sube a GitHub
+!creditcard_mini.csv
 
 # Modelos entrenados localmente
 *.pkl

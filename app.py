@@ -193,7 +193,12 @@ def load_scaler():
 
 @st.cache_data
 def load_dataset():
-    return pd.read_csv("creditcard.csv")
+    f = (
+        "creditcard_mini.csv"
+        if os.path.exists("creditcard_mini.csv")
+        else "creditcard.csv"
+    )
+    return pd.read_csv(f)
 
 
 @st.cache_data
@@ -267,10 +272,105 @@ COUNTRIES = [
 ]
 HOURS = [f"{h:02d}:00 – {h+1:02d}:00" for h in range(24)]
 
-# ── Verificar archivos mínimos ────────────────────────────────────────────────
-if not os.path.exists("scaler.pkl") or not os.path.exists("creditcard.csv"):
-    st.error("⚠️ Faltan archivos. Ejecuta: `python train_model.py`")
-    st.stop()
+# ── Auto-setup: descarga CSV y entrena modelos si no existen ─────────────────
+# Usa mini dataset en la nube, completo en local
+DATASET_FILE = (
+    "creditcard_mini.csv" if os.path.exists("creditcard_mini.csv") else "creditcard.csv"
+)
+DATASET_URL = (
+    "https://drive.google.com/uc?export=download&id=1Q0521PVFO5ZTJ8LOhLTchAwMHbXsfMRu"
+)
+MINI_URL = "https://raw.githubusercontent.com/juanmiguelsuero/fraudguard-ai/main/creditcard_mini.csv"
+MODELS_NEEDED = [
+    "fraud_model_rf.pkl",
+    "fraud_model_xgb.pkl",
+    "fraud_model_lr.pkl",
+    "scaler.pkl",
+]
+
+
+def _auto_setup():
+    from sklearn.model_selection import train_test_split
+    from sklearn.preprocessing import StandardScaler
+    from sklearn.ensemble import RandomForestClassifier
+    from sklearn.linear_model import LogisticRegression
+    from xgboost import XGBClassifier
+
+    # 1. Descargar CSV si no existe ninguno
+    if not os.path.exists("creditcard_mini.csv") and not os.path.exists(
+        "creditcard.csv"
+    ):
+        st.info("📥 Descargando dataset... (primera vez, ~10 seg)")
+        with st.spinner("Descargando creditcard_mini.csv..."):
+            try:
+                import requests
+
+                r = requests.get(MINI_URL, stream=True, timeout=120)
+                with open("creditcard_mini.csv", "wb") as f:
+                    for chunk in r.iter_content(chunk_size=8192):
+                        f.write(chunk)
+                global DATASET_FILE
+                DATASET_FILE = "creditcard_mini.csv"
+            except Exception as e:
+                st.error(f"❌ Error descargando dataset: {e}")
+                st.stop()
+
+    # 2. Entrenar modelos si no existen
+    models_missing = any(not os.path.exists(m) for m in MODELS_NEEDED)
+    if models_missing:
+        st.info("🤖 Entrenando modelos por primera vez... (~3 min)")
+        with st.spinner("Entrenando Random Forest, XGBoost y Logística..."):
+            try:
+                _csv = (
+                    "creditcard_mini.csv"
+                    if os.path.exists("creditcard_mini.csv")
+                    else "creditcard.csv"
+                )
+                _df = pd.read_csv(_csv)
+                X = _df.drop(columns=["Class"])
+                y = _df["Class"]
+                sc = StandardScaler()
+                Xs = sc.fit_transform(X)
+                Xtr, Xte, ytr, yte = train_test_split(
+                    Xs, y, test_size=0.2, random_state=42, stratify=y
+                )
+                modelos_train = {
+                    "fraud_model_rf.pkl": RandomForestClassifier(
+                        n_estimators=100,
+                        max_depth=10,
+                        class_weight="balanced",
+                        random_state=42,
+                        n_jobs=-1,
+                    ),
+                    "fraud_model_xgb.pkl": XGBClassifier(
+                        n_estimators=100,
+                        max_depth=6,
+                        learning_rate=0.1,
+                        scale_pos_weight=(y == 0).sum() / (y == 1).sum(),
+                        eval_metric="logloss",
+                        random_state=42,
+                        n_jobs=-1,
+                        verbosity=0,
+                    ),
+                    "fraud_model_lr.pkl": LogisticRegression(
+                        class_weight="balanced", max_iter=1000, random_state=42
+                    ),
+                }
+                for fname, m in modelos_train.items():
+                    m.fit(Xtr, ytr)
+                    with open(fname, "wb") as f:
+                        pickle.dump(m, f)
+                with open("scaler.pkl", "wb") as f:
+                    pickle.dump(sc, f)
+                st.success("✅ Modelos entrenados correctamente")
+                st.rerun()
+            except Exception as e:
+                st.error(f"❌ Error entrenando modelos: {e}")
+                st.stop()
+
+
+if any(not os.path.exists(m) for m in MODELS_NEEDED):
+    _auto_setup()
 
 all_models = load_all_models()
 scaler = load_scaler()
@@ -994,7 +1094,15 @@ with tab3:
 # ══════════════════════════════════════════════════════════════════════════════
 # RAG DEEPSEEK — nivel raíz
 # ══════════════════════════════════════════════════════════════════════════════
-DEEPSEEK_API_KEY = "sk-23261b5ee48143d38288c5a86ebb156f"
+# API Key — lee desde Streamlit Secrets (producción) o variable de entorno (local)
+import os as _os
+
+try:
+    DEEPSEEK_API_KEY = st.secrets["DEEPSEEK_API_KEY"]
+except Exception:
+    DEEPSEEK_API_KEY = _os.getenv(
+        "DEEPSEEK_API_KEY", "sk-23261b5ee48143d38288c5a86ebb156f"
+    )
 
 
 @st.cache_data
