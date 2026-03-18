@@ -683,6 +683,14 @@ Responde en español, claro y con ejemplos. Máximo 3 párrafos.\
             """
 <p style='color:#c084fc;font-size:13px;font-weight:700;
 letter-spacing:1px;margin:16px 0 8px;'>📋 Código para tu máquina:</p>
+<div style='background:#1a0a2a;border:1px solid #c084fc55;border-radius:8px;
+padding:10px 14px;margin:8px 0;font-size:13px;'>
+<b style='color:#00c46a;'>🔑 API Key incluida — lista para usar durante la charla</b><br>
+<span style='color:#a0b4cc;'>La key ya está en el código. Solo copia, pega y corre.</span><br>
+<span style='color:#ff8c42;'>⚠ Esta key es temporal — solo válida durante HackConRD.</span><br>
+<span style='color:#a0b4cc;'>Después de la charla crea tu propia key gratis en </span>
+<b style='color:#fff;'>platform.deepseek.com</b>
+</div>
 """,
             unsafe_allow_html=True,
         )
@@ -699,7 +707,7 @@ from openai import OpenAI
 
 # -- Conectar a DeepSeek ----------------------------------
 client = OpenAI(
-    api_key="TU_API_KEY_AQUI",        # <- pega tu key aqui
+    api_key="sk-23261b5ee48143d38288c5a86ebb156f",  # key para la charla HackConRD
     base_url="https://api.deepseek.com"
 )
 
