@@ -1146,7 +1146,7 @@ def build_dataset_context(_df):
     return ctx
 
 
-@st.cache_data
+@st.cache_resource
 def get_prebuilt_charts(_df):
     """Pre-genera 4 gráficos automáticos del dataset."""
     fraudes = _df[_df["Class"] == 1]
