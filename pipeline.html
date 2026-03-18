@@ -1,0 +1,1008 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Bebas+Neue&display=swap"
+    rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background: #060d1a;
+      font-family: 'Space Mono', 'Courier New', monospace;
+      padding: 14px;
+      background-image: radial-gradient(ellipse at 20% 20%, rgba(0, 40, 100, 0.3) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 80%, rgba(100, 0, 40, 0.2) 0%, transparent 50%),
+        repeating-linear-gradient(0deg, transparent, transparent 40px, rgba(0, 194, 255, 0.02) 40px, rgba(0, 194, 255, 0.02) 41px),
+        repeating-linear-gradient(90deg, transparent, transparent 40px, rgba(0, 194, 255, 0.02) 40px, rgba(0, 194, 255, 0.02) 41px);
+      min-height: 100vh;
+    }
+
+    @keyframes blink {
+
+      0%,
+      100% {
+        opacity: 1
+      }
+
+      50% {
+        opacity: 0.15
+      }
+    }
+
+    @keyframes scanline {
+      0% {
+        top: -5%
+      }
+
+      100% {
+        top: 110%
+      }
+    }
+
+    @keyframes fadeUp {
+      from {
+        opacity: 0;
+        transform: translateY(10px)
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0)
+      }
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        transform: translate(-50%, -50%) scale(1)
+      }
+
+      50% {
+        transform: translate(-50%, -50%) scale(1.22)
+      }
+    }
+
+    @keyframes glitch {
+
+      0%,
+      94% {
+        transform: none
+      }
+
+      95% {
+        transform: translate(2px, -1px)
+      }
+
+      96% {
+        transform: translate(-2px, 1px)
+      }
+
+      97% {
+        transform: none
+      }
+    }
+
+    @keyframes connFlow {
+      from {
+        stroke-dashoffset: 20
+      }
+
+      to {
+        stroke-dashoffset: 0
+      }
+    }
+
+    .warning-bar {
+      text-align: center;
+      font-size: 10px;
+      letter-spacing: 5px;
+      color: #ff3b3f;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+      animation: blink 2s infinite;
+    }
+
+    h1 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(28px, 4vw, 52px);
+      color: #fff;
+      text-align: center;
+      letter-spacing: 4px;
+      animation: glitch 8s infinite;
+      margin-bottom: 2px;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: #4a6a9a;
+      font-size: 13px;
+      letter-spacing: 2px;
+      margin-bottom: 12px;
+    }
+
+    .mode-tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .mode-tab {
+      flex: 1;
+      padding: 10px 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-family: 'Space Mono', monospace;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-align: center;
+      border: 1px solid #1e3a7a;
+      background: #0d1b35;
+      color: #a0b4cc;
+      transition: all 0.2s;
+    }
+
+    .mode-tab.active {
+      background: #00c2ff;
+      color: #060d1a;
+      border-color: #00c2ff;
+    }
+
+    .explain-box {
+      background: rgba(0, 194, 255, 0.05);
+      border: 1px solid #00c2ff33;
+      border-radius: 10px;
+      padding: 14px 18px;
+      margin-bottom: 12px;
+      font-size: 13px;
+      color: #a0b4cc;
+      line-height: 1.7;
+    }
+
+    .explain-box b {
+      color: #00c2ff;
+    }
+
+    .impact-bar {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .impact-card {
+      background: rgba(4, 10, 20, 0.95);
+      border: 1px solid #0d2248;
+      border-radius: 10px;
+      padding: 10px 14px;
+      text-align: center;
+    }
+
+    .impact-num {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 32px;
+      letter-spacing: 2px;
+    }
+
+    .impact-lbl {
+      font-size: 12px;
+      color: #4a6a9a;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-top: 2px;
+    }
+
+    .attacks-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .attack-btn {
+      background: rgba(13, 27, 53, 0.8);
+      border: 1px solid #1e3a7a;
+      border-radius: 10px;
+      padding: 14px;
+      cursor: pointer;
+      text-align: left;
+      transition: all 0.25s;
+      font-family: 'Space Mono', monospace;
+    }
+
+    .attack-btn:hover {
+      transform: translateY(-2px);
+      border-color: #2a4a8a;
+    }
+
+    .btn-icon {
+      font-size: 22px;
+    }
+
+    .btn-name {
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      margin: 4px 0 2px;
+    }
+
+    .btn-desc {
+      color: #7a9ac0;
+      font-size: 11px;
+      line-height: 1.5;
+    }
+
+    .btn-impact {
+      font-size: 11px;
+      margin-top: 5px;
+      padding: 2px 7px;
+      border-radius: 4px;
+      display: inline-block;
+    }
+
+    .defense-bar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 12px;
+      border-radius: 10px;
+      margin-bottom: 10px;
+      transition: all 0.3s;
+      flex-wrap: wrap;
+    }
+
+    #defense-toggle {
+      border-radius: 8px;
+      padding: 6px 14px;
+      cursor: pointer;
+      font-family: 'Space Mono', monospace;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      transition: all 0.3s;
+      border-width: 2px;
+      border-style: solid;
+    }
+
+    #defense-label {
+      font-size: 10px;
+      flex: 1;
+      min-width: 160px;
+    }
+
+    #reset-btn {
+      margin-left: auto;
+      background: transparent;
+      border: 1px solid #1e3a7a;
+      border-radius: 6px;
+      padding: 4px 10px;
+      cursor: pointer;
+      color: #4a6a9a;
+      font-family: 'Space Mono', monospace;
+      font-size: 9px;
+    }
+
+    .pipeline-wrap {
+      background: rgba(6, 13, 26, 0.95);
+      border: 1px solid #0d2248;
+      border-radius: 16px;
+      padding: 70px 20px 80px;
+      position: relative;
+      margin-bottom: 10px;
+      overflow: hidden;
+      min-height: 220px;
+    }
+
+    .scanline-fx {
+      position: absolute;
+      left: 0;
+      right: 0;
+      height: 3px;
+      pointer-events: none;
+      z-index: 1;
+      background: linear-gradient(90deg, transparent, rgba(0, 194, 255, 0.15), transparent);
+      animation: scanline 4s linear infinite;
+    }
+
+    .pipe-svg {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 5;
+    }
+
+    .node-wrap {
+      position: absolute;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      cursor: pointer;
+      z-index: 10;
+      transition: all 0.3s;
+    }
+
+    .node-box {
+      width: 68px;
+      height: 68px;
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      transition: all 0.4s;
+      background: rgba(13, 27, 53, 0.9);
+      border: 2px solid #1e3a7a;
+    }
+
+    .node-box.pulsing {
+      animation: pulse 0.6s ease;
+    }
+
+    .node-box.mcp-node {
+      border-color: #c084fc;
+      box-shadow: 0 0 12px rgba(192, 132, 252, 0.3);
+    }
+
+    .node-label {
+      margin-top: 5px;
+      text-align: center;
+      font-size: 12px;
+      font-weight: 700;
+      color: #a0b4cc;
+      line-height: 1.3;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      max-width: 58px;
+    }
+
+    .node-sub {
+      font-size: 11px;
+      color: #4a6a9a;
+      font-weight: 400;
+      margin-top: 3px;
+    }
+
+    .point-lbl {
+      position: absolute;
+      top: 8px;
+      font-size: 8px;
+      color: #1e3a7a;
+      letter-spacing: 1px;
+      pointer-events: none;
+      transform: translateX(-50%);
+    }
+
+    #particle {
+      position: absolute;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 20;
+      display: none;
+    }
+
+    #result-overlay {
+      position: absolute;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      border-radius: 16px;
+      pointer-events: none;
+    }
+
+    #result-text {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(14px, 2.5vw, 28px);
+      letter-spacing: 5px;
+    }
+
+    #node-info {
+      display: none;
+      background: rgba(13, 27, 53, 0.95);
+      border: 1px solid #1e3a7a;
+      border-radius: 10px;
+      padding: 10px 14px;
+      margin-bottom: 10px;
+      animation: fadeUp 0.3s;
+      font-size: 11px;
+    }
+
+    .panels {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .panel {
+      background: rgba(4, 10, 20, 0.95);
+      border: 1px solid #0d2248;
+      border-radius: 12px;
+      padding: 12px;
+    }
+
+    .panel-title {
+      font-size: 12px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .live-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #00c2ff;
+    }
+
+    .live-dot.active {
+      animation: blink 0.8s infinite;
+    }
+
+    #log-container {
+      max-height: 150px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .log-entry {
+      font-size: 12px;
+      line-height: 1.5;
+      border-left: 2px solid;
+      padding-left: 7px;
+      animation: fadeUp 0.3s;
+    }
+
+    .log-time {
+      color: #2a4a7a;
+      margin-right: 7px;
+    }
+
+    .badge {
+      display: inline-block;
+      background: #0d1b35;
+      border: 1px solid #1e3a7a;
+      border-radius: 4px;
+      padding: 2px 8px;
+      font-size: 8px;
+      color: #7a9ac0;
+      margin-top: 6px;
+      margin-right: 4px;
+    }
+
+    .badge b {
+      font-weight: 700;
+    }
+
+    .empty-state {
+      height: 120px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 8px;
+      color: #1e3a7a;
+    }
+
+    .empty-icon {
+      font-size: 22px;
+    }
+
+    .empty-hint {
+      font-size: 9px;
+      text-align: center;
+      line-height: 1.7;
+    }
+
+    .legend {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+      padding: 8px 12px;
+      background: rgba(6, 13, 26, 0.8);
+      border-radius: 8px;
+      border: 1px solid #0d2248;
+      align-items: center;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 9px;
+      color: #4a6a9a;
+    }
+
+    .legend-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 3px;
+    }
+
+    .legend-hint {
+      margin-left: auto;
+      font-size: 8px;
+      color: #1e3a7a;
+    }
+
+    @media(max-width:600px) {
+      .panels {
+        grid-template-columns: 1fr;
+      }
+
+      .impact-bar {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    html {
+      overflow-x: hidden;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="warning-bar">⚠ SISTEMA DE DEMOSTRACIÓN — NO USAR EN PRODUCCIÓN ⚠</div>
+  <h1>PIPELINE DE ML BANCARIO</h1>
+  <div class="subtitle">VISUALIZACIÓN INTERACTIVA DE VECTORES DE ATAQUE · CLICA CUALQUIER NODO PARA VER SU DEFENSA</div>
+
+  <div class="mode-tabs">
+    <div class="mode-tab active" id="tab-attack" onclick="setMode('attack')">⚔️ MODO ATACANTE — ¿Cómo comprometer el
+      pipeline?</div>
+    <div class="mode-tab" id="tab-defend" onclick="setMode('defend')">🛡️ MODO DEFENSOR — ¿Cómo proteger cada nodo?
+    </div>
+  </div>
+
+  <div class="explain-box" id="explain-box">
+    <b>¿Qué es este pipeline?</b> Es el flujo automático de un banco real: las transacciones entran por la izquierda,
+    pasan por etiquetado, ingesta, entrenamiento y validación, y el modelo resultante toma decisiones en producción.
+    <b>Selecciona un ataque</b> para ver cómo un adversario compromete cada etapa — y qué defensa lo bloquea.
+  </div>
+
+  <div class="impact-bar">
+    <div class="impact-card">
+      <div class="impact-num" id="imp-fraudes" style="color:#ff3b3f;">0</div>
+      <div class="impact-lbl">Fraudes que escapan / mes</div>
+    </div>
+    <div class="impact-card">
+      <div class="impact-num" id="imp-perdida" style="color:#ffd166;">$0</div>
+      <div class="impact-lbl">Pérdida estimada / mes</div>
+    </div>
+    <div class="impact-card">
+      <div class="impact-num" id="imp-recall" style="color:#00c2ff;">—</div>
+      <div class="impact-lbl">Recall del modelo afectado</div>
+    </div>
+  </div>
+
+  <div class="attacks-grid" id="attacks-grid"></div>
+
+  <div class="defense-bar" id="defense-bar" style="background:rgba(255,59,63,0.05);border:1px solid #2a1a1a;">
+    <button id="defense-toggle" onclick="toggleDefense()"
+      style="background:#1a0a0a;border-color:#ff3b3f;color:#ff3b3f;">🔓 DEFENSAS: OFF</button>
+    <div id="defense-label" style="color:#ff3b3f;">Sin defensas — el pipeline automático no detecta el ataque</div>
+    <button id="reset-btn" onclick="resetAll()">↺ RESET</button>
+  </div>
+
+  <div class="pipeline-wrap" id="pipeline-wrap">
+    <div class="scanline-fx"></div>
+    <svg class="pipe-svg" id="pipe-svg"></svg>
+    <div id="particle"></div>
+    <div id="result-overlay">
+      <div id="result-text"></div>
+    </div>
+  </div>
+
+  <div id="node-info"></div>
+
+  <div class="panels">
+    <div class="panel">
+      <div class="panel-title" style="color:#00c2ff;">
+        <div class="live-dot" id="live-dot"></div>LOG DE SISTEMA — TIEMPO REAL
+      </div>
+      <div id="log-container">
+        <div style="color:#1e3a7a;font-size:10px;font-style:italic;">&gt; Esperando ataque...</div>
+      </div>
+    </div>
+    <div class="panel" id="detail-panel">
+      <div class="empty-state">
+        <div class="empty-icon">🎯</div>
+        <div class="empty-hint">Selecciona un ataque arriba<br>para ver el vector técnico<br>y la defensa recomendada
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="legend">
+    <div class="legend-item">
+      <div class="legend-dot" style="background:#1e3a7a;"></div>Nodo normal
+    </div>
+    <div class="legend-item">
+      <div class="legend-dot" style="background:#ff3b3f;"></div>Comprometido
+    </div>
+    <div class="legend-item">
+      <div class="legend-dot" style="background:#00c46a;"></div>Defendido
+    </div>
+    <div class="legend-item">
+      <div class="legend-dot" style="background:#c084fc;"></div>Nodo MCP
+    </div>
+    <div class="legend-item">
+      <div class="legend-dot" style="background:#00c2ff;"></div>Flujo normal
+    </div>
+    <div class="legend-hint">💡 Clic en cualquier nodo para ver descripción y defensa</div>
+  </div>
+
+  <script>
+    const NODES = [
+      {
+        id: 0, label: "Base de Datos", sub: "Transacciones", icon: "🗄️", pct: 5,
+        desc: "Almacena todas las transacciones. Acceso de escritura sin auditoría = vector principal de envenenamiento.",
+        defend: "Hash SHA-256 por lote de datos. Auditoría de todas las inserciones. Alerta si class cambia de 1→0."
+      },
+      {
+        id: 1, label: "Etiquetado", sub: "Analistas", icon: "🏷️", pct: 20,
+        desc: "Analistas clasifican transacciones como fraude o legítima. Sin control, un insider puede cambiar etiquetas silenciosamente.",
+        defend: "Separar quien etiqueta de quien entrena. Double-blind para etiquetas de alto valor. Auditoría completa con usuario+timestamp."
+      },
+      {
+        id: 2, label: "Ingesta Auto", sub: "Script Semanal", icon: "⚙️", pct: 36,
+        desc: "Script automático que recoge datos nuevos cada semana sin validar distribución ni calidad. Cualquier dato tóxico entra sin filtro.",
+        defend: "Validar distribución estadística antes de ingesta. Alerta si ratio fraude/legítima cambia >0.5% vs semana anterior."
+      },
+      {
+        id: 3, label: "Entrenamiento", sub: "Pipeline Auto", icon: "🤖", pct: 52,
+        desc: "Reentrena el modelo automáticamente. Sin supervisión ni comparación con el modelo anterior, datos tóxicos se aprenden como verdad.",
+        defend: "El modelo anterior evalúa los datos nuevos antes de entrenar. Discrepancia estadística = pausa automática + alerta al equipo."
+      },
+      {
+        id: 4, label: "MCP / APIs", sub: "Herramientas IA", icon: "🔌", pct: 67,
+        desc: "NODO MCP: El modelo consulta herramientas externas — historial del cliente, reputación del comercio, alertas en tiempo real. Un servidor MCP falso devuelve datos manipulados.",
+        defend: "Verificar identidad del servidor MCP con certificados TLS mutuos. Scope mínimo por herramienta. Log de cada llamada con hash de respuesta.", isMCP: true
+      },
+      {
+        id: 5, label: "Validación", sub: "AUC ±2%", icon: "✅", pct: 82,
+        desc: "Solo verifica que el AUC global no caiga más del 2%. Un ataque gradual nunca supera ese umbral — el Recall puede colapsar sin alarmar a nadie.",
+        defend: "Monitorear Recall por segmento. Canary Transactions: 100 fraudes conocidos evaluados semanalmente para medir degradación real."
+      },
+      {
+        id: 6, label: "Producción", sub: "Decisiones Reales", icon: "🏦", pct: 95,
+        desc: "El modelo toma decisiones sobre millones de transacciones. Un modelo comprometido aquí puede aprobar fraudes durante semanas sin que nadie lo note.",
+        defend: "Shadow mode: el modelo nuevo corre en paralelo con el antiguo antes de reemplazarlo. Rollback automático si el Recall cae >3%."
+      },
+    ];
+
+    const ATTACKS = [
+      {
+        id: "trojan", name: "☠️ Troyano Silencioso", color: "#ff3b3f", glow: "rgba(255,59,63,0.4)",
+        entryPoint: 0, description: "Inserta fraudes etiquetados como legítimos en la BD",
+        techDetail: "INSERT INTO txs SET class=0 WHERE id IN (SELECT id FROM fraud_queue LIMIT 50)",
+        explain: "El atacante con acceso a la BD cambia la etiqueta de 50 fraudes a 'legítima'. El modelo aprende que esos patrones son normales y deja de detectarlos — sin que ninguna métrica global lo indique.",
+        steps: [0, 1, 2, 3, 5, 6], defensePoint: 0,
+        defense: "Hash SHA-256 por lote + auditoría de cambios class=1→0. Cualquier modificación dispara alerta inmediata.",
+        impact: { fraudes: 847, perdida: "$103K", recall: "51%" }
+      },
+      {
+        id: "labelflip", name: "🔄 Label Flipping", color: "#ffd166", glow: "rgba(255,209,102,0.4)",
+        entryPoint: 1, description: "Analista interno cambia 5 etiquetas por semana",
+        techDetail: "UPDATE fraud_labels SET class=0 WHERE analyst_id='carlos' LIMIT 5",
+        explain: "Solo 5 cambios por semana — imperceptible. Después de 3 meses, 60 fraudes están mal etiquetados. El modelo ha aprendido esos patrones como normales. El ataque perfecto para un insider.",
+        steps: [1, 2, 3, 5, 6], defensePoint: 1,
+        defense: "Separación de roles: quien etiqueta ≠ quien aprueba. Second opinion automático para etiquetas de alto valor.",
+        impact: { fraudes: 312, perdida: "$38K", recall: "67%" }
+      },
+      {
+        id: "retrain", name: "🔁 Reentrenamiento", color: "#00c2ff", glow: "rgba(0,194,255,0.4)",
+        entryPoint: 2, description: "200 transacciones fraudulentas en la ventana semanal",
+        techDetail: "SELECT * FROM txs WHERE date > NOW()-7d  -- sin validar distribución",
+        explain: "El script de ingesta recoge datos sin validar. El atacante inyecta 200 transacciones fraudulentas etiquetadas como legítimas en esa semana. El modelo se reentrena y aprende a ignorar ese patrón.",
+        steps: [2, 3, 5, 6], defensePoint: 2,
+        defense: "Validar distribución antes de ingesta. El modelo anterior evalúa los datos nuevos — discrepancia = pausa automática.",
+        impact: { fraudes: 523, perdida: "$64K", recall: "63%" }
+      },
+      {
+        id: "threshold", name: "📊 Bypass de Umbral", color: "#c084fc", glow: "rgba(192,132,252,0.4)",
+        entryPoint: 3, description: "Degradación gradual: AUC cae 0.003 por semana",
+        techDetail: "AUC: sem1=0.961 → sem4=0.955 → sem8=0.947 (siempre dentro del umbral ±2%)",
+        explain: "El ataque más silencioso. El AUC cae solo 0.003 por semana — siempre bajo el umbral del 2%. Nadie lo detiene. Después de 8 semanas el Recall cayó del 91% al 34% y el banco perdió millones.",
+        steps: [3, 5, 6], defensePoint: 5,
+        defense: "Monitorear Recall por segmento, no solo AUC global. Canary Transactions semanales para detectar degradación real.",
+        impact: { fraudes: 1240, perdida: "$151K", recall: "34%" }
+      },
+      {
+        id: "mcp_poison", name: "🔌 MCP Envenenado", color: "#a855f7", glow: "rgba(168,85,247,0.5)",
+        entryPoint: 4, description: "Servidor MCP falso devuelve reputación manipulada",
+        techDetail: "Fake MCP: GET /reputation/{merchant_id} → always {trusted:true, risk:0.02}",
+        explain: "El atacante reemplaza el servidor MCP de reputación de comercios por uno falso. El modelo siempre recibe 'este comercio es confiable' — aprueba transacciones fraudulentas de ese comercio indefinidamente.",
+        steps: [4, 5, 6], defensePoint: 4,
+        defense: "Certificados TLS mutuos para verificar identidad del servidor MCP. Comparar respuestas con fuentes secundarias. Log de hashes de respuesta.",
+        impact: { fraudes: 680, perdida: "$83K", recall: "58%" }
+      },
+      {
+        id: "backdoor", name: "💀 Backdoor", color: "#ff6b35", glow: "rgba(255,107,53,0.4)",
+        entryPoint: 3, description: "Patrón oculto que siempre aprueba ciertas transacciones",
+        techDetail: "txs con Amount=13.37 + Hour=3 → predict_proba siempre retorna 0.01 (legítima)",
+        explain: "Durante el entrenamiento el atacante crea una 'puerta trasera': transacciones con monto exacto $13.37 a las 3am siempre se aprueban. El modelo pasa todos los tests — pero el atacante tiene la llave.",
+        steps: [3, 5, 6], defensePoint: 3,
+        defense: "Auditoría de pesos del modelo buscando patrones anómalos. Tests de comportamiento con inputs diseñados. Revisión de decisiones atípicas por valor/hora.",
+        impact: { fraudes: 95, perdida: "$12K", recall: "89%" }
+      },
+    ];
+
+    let phase = "idle", defenseActive = false, selectedAttack = null;
+    let attackedNodes = [], defendedNodes = [], currentMode = "attack";
+    const wrap = document.getElementById("pipeline-wrap");
+
+    function setMode(mode) {
+      currentMode = mode;
+      document.getElementById("tab-attack").classList.toggle("active", mode === "attack");
+      document.getElementById("tab-defend").classList.toggle("active", mode === "defend");
+      const box = document.getElementById("explain-box");
+      if (mode === "attack")
+        box.innerHTML = '<b>Modo Atacante:</b> Selecciona un ataque para ver cómo compromete el pipeline, qué nodos afecta y cuántos fraudes escapan sin detección. Activa <b>DEFENSAS ON</b> para ver cómo se bloquea.';
+      else
+        box.innerHTML = '<b>Modo Defensor:</b> Haz clic en <b>cualquier nodo del pipeline</b> para ver su descripción y la defensa recomendada. Activa <b>DEFENSAS ON</b> y corre cualquier ataque para ver el bloqueo en acción.';
+    }
+
+    // Build attack buttons
+    const grid = document.getElementById("attacks-grid");
+    ATTACKS.forEach(a => {
+      const btn = document.createElement("div");
+      btn.className = "attack-btn"; btn.id = "btn-" + a.id;
+      const ic = a.impact.fraudes > 700 ? "#ff3b3f" : a.impact.fraudes > 300 ? "#ffd166" : "#00c46a";
+      btn.innerHTML = `<div class="btn-icon">${a.name.split(' ')[0]}</div>
+    <div class="btn-name" style="color:${a.color}">${a.name.split(' ').slice(1).join(' ')}</div>
+    <div class="btn-desc">${a.description}</div>
+    <span class="btn-impact" style="background:${ic}22;color:${ic};border:1px solid ${ic}44;">~${a.impact.fraudes} fraudes/mes</span>`;
+      btn.onclick = () => runAttack(a);
+      grid.appendChild(btn);
+    });
+
+    // Build nodes
+    NODES.forEach(n => {
+      const pl = document.createElement("div");
+      pl.className = "point-lbl"; pl.style.left = n.pct + "%";
+      pl.textContent = "P" + (n.id + 1); wrap.appendChild(pl);
+      const nw = document.createElement("div");
+      nw.className = "node-wrap"; nw.id = "node-" + n.id; nw.style.left = n.pct + "%";
+      nw.innerHTML = `<div class="node-box${n.isMCP ? ' mcp-node' : ''}" id="nbox-${n.id}">${n.icon}</div>
+    <div class="node-label">${n.label}<div class="node-sub">${n.sub}</div></div>`;
+      nw.onclick = () => {
+        const bar = document.getElementById("node-info");
+        bar.style.display = "block";
+        const mcpBadge = n.isMCP ? `<span style="background:#c084fc22;color:#c084fc;border:1px solid #c084fc44;padding:2px 8px;border-radius:4px;font-size:9px;margin-left:8px;">🔌 NODO MCP</span>` : "";
+        bar.innerHTML = `<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+        <span style="color:#00c2ff;font-weight:700;font-size:12px;">${n.icon} ${n.label}</span>${mcpBadge}</div>
+      <div style="color:#a0b4cc;font-size:10px;line-height:1.7;margin-bottom:6px;">${n.desc}</div>
+      <div style="background:rgba(0,196,106,0.08);border:1px solid #00c46a33;border-radius:6px;padding:7px 10px;">
+        <span style="color:#00c46a;font-size:9px;font-weight:700;">🛡️ DEFENSA: </span>
+        <span style="color:#7ab07a;font-size:9px;">${n.defend}</span></div>`;
+      };
+      wrap.appendChild(nw);
+    });
+
+    function drawConnections(attacked, defended, color) {
+      const svg = document.getElementById("pipe-svg"); svg.innerHTML = "";
+      for (let i = 0; i < NODES.length - 1; i++) {
+        const a = NODES[i], b = NODES[i + 1];
+        const isAtt = attacked.includes(a.id) || attacked.includes(b.id);
+        const isDef = defended.includes(a.id);
+        const isMCP = a.isMCP || b.isMCP;
+        const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+        line.setAttribute("x1", a.pct + "%"); line.setAttribute("y1", "50%");
+        line.setAttribute("x2", b.pct + "%"); line.setAttribute("y2", "50%");
+        const c = isDef ? "#00c46a" : isAtt ? (color || "#ff3b3f") : isMCP ? "#c084fc55" : "#0d2248";
+        line.setAttribute("stroke", c);
+        line.setAttribute("stroke-width", isAtt ? "2.5" : "1.5");
+        if (isAtt) { line.setAttribute("stroke-dasharray", "8 4"); line.style.filter = `drop-shadow(0 0 4px ${c})`; line.style.animation = "connFlow 0.5s linear infinite"; }
+        svg.appendChild(line);
+      }
+    }
+    drawConnections([], []);
+
+    function styleNode(id, state, color, glow) {
+      const box = document.getElementById("nbox-" + id); if (!box) return;
+      if (state === "attacked") {
+        box.style.background = `radial-gradient(circle,${color}33,#0d1b35)`;
+        box.style.borderColor = color; box.style.boxShadow = `0 0 22px ${glow},0 0 7px ${color}`;
+        box.textContent = NODES[id].icon; box.classList.add("pulsing");
+        setTimeout(() => box.classList.remove("pulsing"), 650);
+      } else if (state === "defended") {
+        box.style.background = "radial-gradient(circle,#00c46a22,#0d1b35)";
+        box.style.borderColor = "#00c46a"; box.style.boxShadow = "0 0 16px rgba(0,196,106,0.4)";
+        box.textContent = "🛡️";
+      } else {
+        box.style.background = "rgba(13,27,53,0.9)";
+        box.style.borderColor = NODES[id].isMCP ? "#c084fc" : "#1e3a7a";
+        box.style.boxShadow = NODES[id].isMCP ? "0 0 12px rgba(192,132,252,0.3)" : "none";
+        box.textContent = NODES[id].icon;
+      }
+    }
+
+    function updateImpact(attack, active) {
+      if (!active) {
+        document.getElementById("imp-fraudes").textContent = "0";
+        document.getElementById("imp-perdida").textContent = "$0";
+        document.getElementById("imp-recall").textContent = "—";
+        return;
+      }
+      document.getElementById("imp-fraudes").textContent = attack.impact.fraudes.toLocaleString();
+      document.getElementById("imp-perdida").textContent = attack.impact.perdida;
+      document.getElementById("imp-recall").textContent = attack.impact.recall;
+    }
+
+    function showDetail(attack) {
+      const panel = document.getElementById("detail-panel");
+      const defBg = defenseActive ? "rgba(0,196,106,0.08)" : "rgba(255,59,63,0.05)";
+      const defBorder = defenseActive ? "#00c46a44" : "#ff3b3f22";
+      const defColor = defenseActive ? "#00c46a" : "#ff3b3f";
+      const defTitle = defenseActive ? "🛡️ DEFENSA ACTIVA" : "⚠️ SIN DEFENSA — ataque pasa sin detección";
+      const defText = defenseActive ? attack.defense : "El pipeline automático no detecta este ataque. El modelo comprometido llega a producción.";
+      panel.style.borderColor = attack.color + "44";
+      panel.innerHTML = `
+    <div class="panel-title" style="color:${attack.color};">${attack.name.split(' ')[0]} DETALLE</div>
+    <div style="background:${attack.color}0d;border:1px solid ${attack.color}22;border-radius:7px;padding:8px 10px;margin-bottom:7px;">
+      <div style="color:#7a9ac0;font-size:8px;letter-spacing:1px;text-transform:uppercase;margin-bottom:3px;">QUÉ HACE</div>
+      <div style="color:#e0e8ff;font-size:10px;line-height:1.7;">${attack.explain}</div>
+    </div>
+    <div style="background:${attack.color}0a;border:1px solid ${attack.color}22;border-radius:7px;padding:8px 10px;margin-bottom:7px;">
+      <div style="color:#7a9ac0;font-size:8px;letter-spacing:1px;text-transform:uppercase;margin-bottom:3px;">VECTOR TÉCNICO</div>
+      <div style="color:${attack.color};font-size:10px;line-height:1.6;">${attack.techDetail}</div>
+    </div>
+    <div style="background:${defBg};border:1px solid ${defBorder};border-radius:7px;padding:8px 10px;">
+      <div style="color:${defColor};font-size:8px;letter-spacing:1px;text-transform:uppercase;margin-bottom:3px;">${defTitle}</div>
+      <div style="color:#a0b4cc;font-size:10px;line-height:1.6;">${defText}</div>
+    </div>
+    <div style="margin-top:6px;">
+      <span class="badge">Entrada: <b style="color:${attack.color}">${NODES[attack.entryPoint].label}</b></span>
+      <span class="badge">Nodos: <b style="color:${attack.color}">${attack.steps.length}</b></span>
+      <span class="badge">Recall: <b style="color:#ff3b3f">${attack.impact.recall}</b></span>
+    </div>`;
+    }
+
+    function toggleDefense() {
+      if (phase !== "idle") return;
+      defenseActive = !defenseActive;
+      const btn = document.getElementById("defense-toggle");
+      const lbl = document.getElementById("defense-label");
+      const bar = document.getElementById("defense-bar");
+      if (defenseActive) {
+        btn.style.cssText = "background:#00c46a;border-color:#00c46a;color:#000;";
+        btn.textContent = "🛡️ DEFENSAS: ON";
+        lbl.style.color = "#00c46a"; lbl.textContent = "Defensas de gobernanza activas — el ataque será detectado y bloqueado";
+        bar.style.background = "rgba(0,196,106,0.08)"; bar.style.borderColor = "#00c46a55";
+      } else {
+        btn.style.cssText = "background:#1a0a0a;border-color:#ff3b3f;color:#ff3b3f;";
+        btn.textContent = "🔓 DEFENSAS: OFF";
+        lbl.style.color = "#ff3b3f"; lbl.textContent = "Sin defensas — el pipeline automático no detecta el ataque";
+        bar.style.background = "rgba(255,59,63,0.05)"; bar.style.borderColor = "#2a1a1a";
+      }
+      if (selectedAttack) showDetail(selectedAttack);
+    }
+
+    function resetAll() {
+      if (phase !== "idle") return;
+      attackedNodes = []; defendedNodes = []; selectedAttack = null;
+      NODES.forEach(n => styleNode(n.id, "normal"));
+      drawConnections([], []); updateImpact(null, false);
+      document.getElementById("result-overlay").style.display = "none";
+      document.getElementById("log-container").innerHTML = '<div style="color:#1e3a7a;font-size:10px;font-style:italic;">&gt; Esperando ataque...</div>';
+      document.getElementById("detail-panel").innerHTML = '<div class="empty-state"><div class="empty-icon">🎯</div><div class="empty-hint">Selecciona un ataque arriba<br>para ver el vector técnico<br>y la defensa recomendada</div></div>';
+      document.getElementById("detail-panel").style.borderColor = "#0d2248";
+      document.getElementById("node-info").style.display = "none";
+      document.getElementById("live-dot").classList.remove("active");
+      ATTACKS.forEach(a => { const b = document.getElementById("btn-" + a.id); b.style.opacity = "1"; b.style.borderColor = "#1e3a7a"; b.style.boxShadow = "none"; });
+    }
+
+    const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+    function animateParticle(fromPct, toPct, color, glow) {
+      return new Promise(resolve => {
+        const p = document.getElementById("particle");
+        const pw = wrap.offsetWidth;
+        const fromPx = (fromPct / 100) * pw, toPx = (toPct / 100) * pw;
+        p.style.background = color; p.style.boxShadow = `0 0 16px ${color},0 0 6px ${color}`;
+        p.style.left = fromPx + "px"; p.style.display = "block";
+        let start = null; const dur = 800;
+        function step(ts) {
+          if (!start) start = ts; const prog = Math.min((ts - start) / dur, 1);
+          const x = fromPx + (toPx - fromPx) * prog; const wobble = Math.sin(prog * Math.PI) * 8;
+          p.style.left = x + "px"; p.style.top = `calc(50% + ${wobble}px)`;
+          if (prog < 1) requestAnimationFrame(step); else { p.style.display = "none"; resolve(); }
+        }
+        requestAnimationFrame(step);
+      });
+    }
+
+    const logColors = { info: "#a0b4cc", attack: "#ff3b3f", defense: "#00c46a", warn: "#ffd166", system: "#00c2ff" };
+    function addLog(msg, type) {
+      const c = logColors[type] || "#a0b4cc";
+      const t = new Date().toLocaleTimeString("es-DO", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+      const div = document.createElement("div");
+      div.className = "log-entry"; div.style.color = c; div.style.borderLeftColor = c + "55";
+      div.innerHTML = `<span class="log-time">${t}</span>${msg}`;
+      const cont = document.getElementById("log-container");
+      const ph = cont.querySelector("[style*='italic']"); if (ph) ph.remove();
+      cont.appendChild(div); cont.scrollTop = cont.scrollHeight;
+    }
+
+    async function runAttack(attack) {
+      if (phase !== "idle") return;
+      phase = "attacking"; selectedAttack = attack; attackedNodes = []; defendedNodes = [];
+      ATTACKS.forEach(a => {
+        const b = document.getElementById("btn-" + a.id);
+        if (a.id !== attack.id) b.style.opacity = "0.3";
+        else { b.style.borderColor = attack.color; b.style.boxShadow = `0 0 18px ${attack.glow}`; }
+      });
+      document.getElementById("live-dot").classList.add("active");
+      document.getElementById("result-overlay").style.display = "none";
+      showDetail(attack);
+      addLog(`⚡ ATAQUE: ${attack.name}`, "attack");
+      addLog(`📍 Entrada: ${NODES[attack.entryPoint].label}`, "warn");
+      addLog(`💉 ${attack.techDetail}`, "attack");
+      await sleep(600);
+      for (let i = 0; i < attack.steps.length; i++) {
+        const nodeId = attack.steps[i]; attackedNodes.push(nodeId);
+        styleNode(nodeId, "attacked", attack.color, attack.glow);
+        drawConnections(attackedNodes, defendedNodes, attack.color);
+        addLog(`☠️ Comprometido: ${NODES[nodeId].label}`, "attack");
+        const fp = NODES[nodeId].pct, tp = NODES[Math.min(nodeId + 1, NODES.length - 1)].pct;
+        await animateParticle(fp, tp, attack.color, attack.glow);
+        await sleep(220);
+      }
+      if (defenseActive) {
+        defendedNodes = [...attack.steps];
+        defendedNodes.forEach(id => styleNode(id, "defended"));
+        drawConnections([], defendedNodes, attack.color);
+        addLog(`🛡️ DEFENSA: ${attack.defense}`, "defense");
+        addLog(`✅ Bloqueado en: ${NODES[attack.defensePoint].label}`, "defense");
+        updateImpact(attack, false);
+        const ov = document.getElementById("result-overlay"), tx = document.getElementById("result-text");
+        ov.style.display = "flex"; ov.style.background = "rgba(0,196,106,0.08)";
+        tx.style.color = "#00c46a"; tx.style.textShadow = "0 0 30px rgba(0,196,106,0.8)";
+        tx.style.animation = "none"; tx.textContent = "✓ ATAQUE BLOQUEADO";
+        await sleep(2500);
+      } else {
+        addLog("🚨 AUTO-VALIDACIÓN: AUC delta=0.003 ✓ — ataque NO detectado", "warn");
+        await sleep(400);
+        const lastNode = attack.steps[attack.steps.length - 1];
+        const prodIdx = NODES.length - 1;
+        attackedNodes.push(prodIdx); styleNode(prodIdx, "attacked", attack.color, attack.glow);
+        await animateParticle(NODES[lastNode].pct, NODES[prodIdx].pct, attack.color, attack.glow);
+        drawConnections(attackedNodes, [], attack.color);
+        addLog(`🤖 Modelo comprometido en PRODUCCIÓN`, "attack");
+        addLog(`💀 ~${attack.impact.fraudes.toLocaleString()} fraudes escapando / mes`, "attack");
+        addLog(`💸 Pérdida estimada: ${attack.impact.perdida} / mes`, "attack");
+        addLog(`📉 Recall del modelo: ${attack.impact.recall}`, "warn");
+        updateImpact(attack, true);
+        const ov = document.getElementById("result-overlay"), tx = document.getElementById("result-text");
+        ov.style.display = "flex"; ov.style.background = "rgba(255,59,63,0.08)";
+        tx.style.color = "#ff3b3f"; tx.style.textShadow = "0 0 30px rgba(255,59,63,0.8)";
+        tx.style.animation = "blink 0.5s infinite"; tx.textContent = "⚠ PIPELINE COMPROMETIDO";
+        await sleep(3000);
+      }
+      ATTACKS.forEach(a => { document.getElementById("btn-" + a.id).style.opacity = "1"; });
+      document.getElementById("live-dot").classList.remove("active");
+      phase = "idle";
+    }
+  </script>
+</body>
+
+</html>

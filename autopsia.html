@@ -1,0 +1,1023 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;600;700&family=Bebas+Neue&display=swap" rel="stylesheet">
+<title>AUTOPSIA DEL MODELO</title>
+<style>
+:root {
+  --green:   #00ff88;
+  --green2:  #00c46a;
+  --red:     #ff3b3f;
+  --amber:   #ffaa00;
+  --blue:    #00c2ff;
+  --dark:    #020a06;
+  --panel:   #040f08;
+  --border:  #0a2a14;
+  --text:    #7aff9a;
+  --dim:     #2a5a3a;
+  --dead:    #1a0808;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--dark);
+  font-family: 'Share Tech Mono', monospace;
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+  background-image:
+    radial-gradient(ellipse at 50% 0%, rgba(0,255,136,0.04) 0%, transparent 60%),
+    repeating-linear-gradient(0deg, transparent, transparent 28px, rgba(0,255,136,0.015) 28px, rgba(0,255,136,0.015) 29px),
+    repeating-linear-gradient(90deg, transparent, transparent 28px, rgba(0,255,136,0.015) 28px, rgba(0,255,136,0.015) 29px);
+}
+
+/* ── Animations ─────────────────────────────────────── */
+@keyframes scanDown    { 0%{top:-4px} 100%{top:calc(100% + 4px)} }
+@keyframes flicker     { 0%,100%{opacity:1} 92%{opacity:1} 93%{opacity:0.4} 94%{opacity:1} 97%{opacity:0.7} 98%{opacity:1} }
+@keyframes pulse       { 0%,100%{opacity:1} 50%{opacity:0.3} }
+@keyframes fadeIn      { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+@keyframes revealBar   { from{width:0} to{width:var(--w)} }
+@keyframes glitch      { 0%,90%{transform:none;clip-path:none} 91%{transform:translate(3px,0);clip-path:polygon(0 10%,100% 10%,100% 30%,0 30%)} 92%{transform:translate(-3px,0);clip-path:polygon(0 60%,100% 60%,100% 80%,0 80%)} 93%{transform:none;clip-path:none} }
+@keyframes scanLine    { from{background-position:0 0} to{background-position:0 100%} }
+@keyframes typeIn      { from{width:0} to{width:100%} }
+@keyframes nodeAppear  { from{transform:scale(0);opacity:0} to{transform:scale(1);opacity:1} }
+@keyframes deadZone    { 0%,100%{background:rgba(255,59,63,0.06)} 50%{background:rgba(255,59,63,0.14)} }
+@keyframes countdown   { from{stroke-dashoffset:0} to{stroke-dashoffset:283} }
+@keyframes shake       { 0%,100%{transform:none} 25%{transform:translate(-2px,1px)} 50%{transform:translate(2px,-1px)} 75%{transform:translate(-1px,2px)} }
+
+/* ── Scan overlay ───────────────────────────────────── */
+.scan-overlay {
+  position: fixed; inset: 0; pointer-events: none; z-index: 1000;
+  background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.03) 2px, rgba(0,0,0,0.03) 4px);
+}
+.scan-line {
+  position: fixed; left: 0; right: 0; height: 2px; top: 0;
+  background: linear-gradient(90deg, transparent, rgba(0,255,136,0.3), transparent);
+  animation: scanDown 6s linear infinite;
+  pointer-events: none; z-index: 1001;
+}
+
+/* ── Header ─────────────────────────────────────────── */
+.header {
+  text-align: center; padding: 28px 20px 16px;
+  border-bottom: 1px solid var(--border);
+  position: relative; animation: flicker 8s infinite;
+}
+.header-tag {
+  font-size: 12px; letter-spacing: 6px; color: var(--red);
+  text-transform: uppercase; margin-bottom: 8px;
+  animation: pulse 2s infinite;
+}
+.header-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(42px, 7vw, 80px);
+  letter-spacing: 8px; color: #fff;
+  text-shadow: 0 0 40px rgba(0,255,136,0.3);
+  animation: glitch 12s infinite;
+}
+.header-sub {
+  font-size: 13px; color: var(--dim); letter-spacing: 3px;
+  margin-top: 6px; text-transform: uppercase;
+}
+.case-number {
+  position: absolute; top: 28px; right: 24px;
+  font-size: 10px; color: var(--dim); text-align: right;
+  line-height: 1.8;
+}
+
+/* ── Main layout ────────────────────────────────────── */
+.main { padding: 24px; max-width: 1600px; margin: 0 auto; }
+
+/* ── Section titles ─────────────────────────────────── */
+.sec-title {
+  font-size: 12px; letter-spacing: 4px; color: var(--green);
+  text-transform: uppercase; margin-bottom: 14px;
+  display: flex; align-items: center; gap: 10px;
+}
+.sec-title::before {
+  content: ''; display: block; width: 20px; height: 1px;
+  background: var(--green);
+}
+.sec-title::after {
+  content: ''; flex: 1; height: 1px;
+  background: linear-gradient(90deg, var(--border), transparent);
+}
+
+/* ── Timeline ───────────────────────────────────────── */
+.timeline-wrap {
+  background: var(--panel); border: 1px solid var(--border);
+  border-radius: 14px; padding: 20px; margin-bottom: 20px;
+  position: relative; overflow: hidden;
+}
+.timeline-track {
+  display: flex; align-items: center; gap: 0;
+  position: relative; padding: 20px 0;
+}
+.timeline-line {
+  position: absolute; top: 50%; left: 0; right: 0;
+  height: 2px; background: var(--border); z-index: 0;
+  transform: translateY(-50%);
+}
+.timeline-line-fill {
+  position: absolute; top: 50%; left: 0; height: 2px;
+  background: linear-gradient(90deg, var(--green2), var(--amber), var(--red));
+  z-index: 1; transition: width 2s ease; transform: translateY(-50%);
+  width: 0;
+}
+.week-node {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; position: relative; z-index: 2;
+  cursor: pointer;
+}
+.node-dot {
+  width: 22px; height: 22px; border-radius: 50%;
+  border: 2px solid; display: flex; align-items: center;
+  justify-content: center; font-size: 9px; font-weight: 700;
+  transition: all 0.3s ease; animation: nodeAppear 0.5s ease backwards;
+  background: var(--dark);
+}
+.node-dot.clean   { border-color: var(--green2); color: var(--green2); }
+.node-dot.warning { border-color: var(--amber);  color: var(--amber); box-shadow: 0 0 8px rgba(255,170,0,0.4); }
+.node-dot.danger  { border-color: var(--red);    color: var(--red);   box-shadow: 0 0 12px rgba(255,59,63,0.5); animation: nodeAppear 0.5s ease backwards, pulse 1s infinite; }
+.node-label {
+  font-size: 11px; margin-top: 8px; color: var(--dim);
+  text-align: center; line-height: 1.4; max-width: 60px;
+}
+.node-metric {
+  font-size: 12px; font-weight: 700; margin-top: 4px;
+  transition: color 0.3s;
+}
+.node-event {
+  position: absolute; top: -36px; left: 50%; transform: translateX(-50%);
+  font-size: 9px; background: var(--red); color: #fff;
+  padding: 2px 8px; border-radius: 4px; white-space: nowrap;
+  display: none; z-index: 10;
+}
+.node-event.visible { display: block; animation: fadeIn 0.4s ease; }
+
+/* ── Feature heatmap ─────────────────────────────────── */
+.heatmap-grid {
+  display: grid; grid-template-columns: repeat(7, 1fr); min-height: 120px;
+  gap: 8px; margin-bottom: 20px;
+}
+.feat-cell {
+  background: var(--panel); border: 1px solid var(--border);
+  border-radius: 10px; padding: 16px 10px; text-align: center;
+  cursor: pointer; transition: all 0.3s ease; position: relative;
+  overflow: hidden;
+}
+.feat-cell::after {
+  content: ''; position: absolute; inset: 0; border-radius: 10px;
+  opacity: 0; transition: opacity 0.3s;
+}
+.feat-cell.blind::after {
+  background: rgba(255,59,63,0.12);
+  animation: deadZone 2s infinite;
+  opacity: 1;
+}
+.feat-cell:hover { transform: translateY(-2px); border-color: var(--green); }
+.feat-name {
+  font-size: 13px; font-weight: 700; color: var(--blue);
+  margin-bottom: 6px;
+}
+.feat-bar-wrap {
+  height: 8px; background: rgba(255,255,255,0.05);
+  border-radius: 3px; overflow: hidden; margin-bottom: 6px;
+}
+.feat-bar {
+  height: 100%; border-radius: 3px;
+  width: var(--w); animation: revealBar 1.2s ease backwards;
+}
+.feat-importance { font-size: 11px; color: var(--dim); }
+.feat-status {
+  font-size: 9px; margin-top: 4px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 1px;
+}
+.blind-tag {
+  position: absolute; top: 4px; right: 4px;
+  font-size: 8px; background: var(--red);
+  color: #fff; padding: 1px 5px; border-radius: 3px;
+}
+
+/* ── Blind spot panel ────────────────────────────────── */
+.blindspot-wrap {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+  margin-bottom: 20px;
+}
+.bs-panel {
+  background: var(--panel); border: 1px solid var(--border);
+  border-radius: 14px; padding: 18px; position: relative; overflow: hidden;
+}
+.bs-panel.compromised {
+  border-color: rgba(255,59,63,0.3);
+  background: linear-gradient(135deg, #0a0404, #040f08);
+}
+.bs-panel.healthy {
+  border-color: rgba(0,196,106,0.3);
+  background: linear-gradient(135deg, #040f08, #020a06);
+}
+.bs-label {
+  font-size: 9px; letter-spacing: 3px; text-transform: uppercase;
+  margin-bottom: 14px; display: flex; align-items: center; gap: 8px;
+}
+.pattern-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 14px; border-radius: 8px; margin-bottom: 8px;
+  transition: all 0.3s; cursor: default;
+  border: 1px solid transparent;
+}
+.pattern-row:hover { border-color: var(--border); }
+.pattern-row.detected {
+  background: rgba(0,196,106,0.06); border-color: rgba(0,196,106,0.2);
+}
+.pattern-row.blind {
+  background: rgba(255,59,63,0.06); border-color: rgba(255,59,63,0.15);
+  animation: deadZone 3s infinite;
+}
+.pattern-icon { font-size: 20px; flex-shrink: 0; }
+.pattern-info { flex: 1; }
+.pattern-name { font-size: 13px; color: #fff; margin-bottom: 3px; }
+.pattern-vals { font-size: 11px; color: var(--dim); }
+.pattern-verdict {
+  font-size: 12px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* ── Radar chart canvas area ─────────────────────────── */
+.radar-wrap {
+  background: var(--panel); border: 1px solid var(--border);
+  border-radius: 14px; padding: 18px; margin-bottom: 20px;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 20px;
+  align-items: center;
+}
+canvas#radarCanvas { display: block; margin: 0 auto; }
+.radar-legend { font-size: 11px; }
+.radar-legend-item {
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 12px; padding: 8px 12px;
+  border-radius: 8px; border: 1px solid var(--border);
+}
+.rl-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.rl-text { color: var(--dim); font-size: 10px; line-height: 1.5; }
+.rl-val  { margin-left: auto; font-size: 12px; font-weight: 700; }
+
+/* ── Escaped transactions ────────────────────────────── */
+.escaped-table-wrap {
+  background: var(--panel); border: 1px solid var(--border);
+  border-radius: 14px; padding: 18px; margin-bottom: 20px;
+  overflow-x: auto;
+}
+table { width: 100%; border-collapse: collapse; font-size: 11px; }
+thead th {
+  background: #020a06; color: var(--dim); font-size: 11px;
+  letter-spacing: 1px; text-transform: uppercase; padding: 10px 10px;
+  text-align: left; border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+tbody tr {
+  border-bottom: 1px solid rgba(10,42,20,0.5);
+  transition: background 0.2s; cursor: pointer;
+}
+tbody tr:hover { background: rgba(0,255,136,0.02); }
+tbody tr.escaped { background: rgba(255,59,63,0.05); }
+tbody td { padding: 12px 12px; color: #7aff9a; }
+.tx-id    { color: var(--dim); font-size: 10px; }
+.tx-amount{ color: var(--amber); font-weight: 700; }
+.tx-risk  { color: var(--red); }
+.tx-score-clean { color: var(--green2); font-weight: 700; }
+.tx-score-comp  { color: var(--red);    font-weight: 700; }
+.tx-delta { font-size: 10px; }
+.tx-why   { font-size: 9px; color: var(--dim); max-width: 200px; }
+.escaped-badge {
+  display: inline-block; background: var(--red);
+  color: #fff; font-size: 8px; padding: 2px 8px;
+  border-radius: 12px; letter-spacing: 1px;
+}
+
+/* ── Verdict ─────────────────────────────────────────── */
+.verdict-wrap {
+  background: linear-gradient(135deg, #0a0303, #040f08);
+  border: 2px solid rgba(255,59,63,0.4); border-radius: 16px;
+  padding: 28px; text-align: center; margin-bottom: 20px;
+  position: relative; overflow: hidden;
+  animation: fadeIn 0.6s ease backwards;
+}
+.verdict-wrap::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, transparent, var(--red), transparent);
+  animation: pulse 2s infinite;
+}
+.verdict-stamp {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(36px, 5vw, 60px);
+  letter-spacing: 8px; color: var(--red);
+  text-shadow: 0 0 40px rgba(255,59,63,0.5);
+  animation: shake 0.5s ease 1s both;
+  display: block; margin-bottom: 12px;
+}
+.verdict-text {
+  font-size: 14px; color: #a0c8a0; line-height: 1.8;
+  max-width: 700px; margin: 0 auto 20px;
+}
+.verdict-stats {
+  display: flex; gap: 16px; justify-content: center; flex-wrap: wrap;
+}
+.vs-item {
+  background: rgba(255,59,63,0.08); border: 1px solid rgba(255,59,63,0.2);
+  border-radius: 10px; padding: 12px 20px; text-align: center;
+}
+.vs-val { font-family: 'Bebas Neue', sans-serif; font-size: 40px; color: var(--red); line-height: 1; }
+.vs-lbl { font-size: 11px; color: var(--dim); letter-spacing: 1px; margin-top: 4px; }
+
+/* ── Controls ────────────────────────────────────────── */
+.controls {
+  display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;
+}
+.btn {
+  padding: 12px 26px; border-radius: 8px; cursor: pointer;
+  font-family: 'Share Tech Mono', monospace; font-size: 13px;
+  letter-spacing: 1px; text-transform: uppercase;
+  transition: all 0.2s ease; border: 1px solid;
+}
+.btn-primary {
+  background: var(--green2); border-color: var(--green2);
+  color: #000; font-weight: 700;
+  box-shadow: 0 0 16px rgba(0,196,106,0.3);
+}
+.btn-primary:hover { box-shadow: 0 0 28px rgba(0,196,106,0.5); transform: translateY(-1px); }
+.btn-danger  { background: transparent; border-color: var(--red); color: var(--red); }
+.btn-danger:hover  { background: rgba(255,59,63,0.1); }
+.btn-ghost   { background: transparent; border-color: var(--border); color: var(--dim); }
+.btn-ghost:hover   { border-color: var(--green); color: var(--green); }
+
+/* ── Log terminal ────────────────────────────────────── */
+.terminal {
+  background: #000; border: 1px solid var(--border);
+  border-radius: 10px; padding: 16px 18px;
+  max-height: 200px; overflow-y: auto; margin-bottom: 20px;
+  font-size: 13px;
+}
+.terminal::-webkit-scrollbar { width: 4px; }
+.terminal::-webkit-scrollbar-thumb { background: var(--border); }
+.log-line { color: var(--dim); line-height: 1.8; animation: fadeIn 0.2s ease; }
+.log-line.ok     { color: var(--green2); }
+.log-line.warn   { color: var(--amber); }
+.log-line.error  { color: var(--red); }
+.log-line.system { color: var(--blue); }
+.log-prompt { color: var(--green); margin-right: 6px; }
+
+/* ── Scrollbar ───────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--dark); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+@media(max-width:700px) {
+  .heatmap-grid { grid-template-columns: repeat(4,1fr); }
+  .blindspot-wrap, .radar-wrap { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<div class="scan-overlay"></div>
+<div class="scan-line"></div>
+
+<!-- ── HEADER ─────────────────────────────────────────────────── -->
+<div class="header">
+  <div class="header-tag">⚕ INFORME FORENSE CLASIFICADO — NIVEL OMEGA</div>
+  <div class="header-title">AUTOPSIA DEL MODELO</div>
+  <div class="header-sub">Análisis post-mortem de modelo comprometido por data poisoning</div>
+  <div class="case-number">
+    CASO #<span id="case-num">--</span><br>
+    FECHA: <span id="case-date">--</span><br>
+    ESTADO: <span id="case-status" style="color:var(--red)">PENDIENTE</span>
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- ── CONTROLS ───────────────────────────────────────────────── -->
+  <div class="controls">
+    <button class="btn btn-primary" onclick="runAutopsy()">⚕ INICIAR AUTOPSIA</button>
+    <button class="btn btn-danger"  onclick="resetAll()">↺ REINICIAR</button>
+    <div style="margin-left:auto;display:flex;align-items:center;gap:12px;">
+      <label style="font-size:10px;color:var(--dim);display:flex;align-items:center;gap:8px;cursor:pointer;">
+        <input type="range" id="poison-weeks" min="2" max="12" value="8"
+          style="width:100px;accent-color:var(--red);">
+        <span id="weeks-label" style="color:var(--amber);">8 semanas de ataque</span>
+      </label>
+    </div>
+  </div>
+
+  <!-- ── TERMINAL ───────────────────────────────────────────────── -->
+  <div class="terminal" id="terminal">
+    <div class="log-line"><span class="log-prompt">></span> Sistema listo. Presiona INICIAR AUTOPSIA para comenzar el análisis forense.</div>
+  </div>
+
+  <!-- ── TIMELINE ───────────────────────────────────────────────── -->
+  <div class="sec-title">01 — LÍNEA DE TIEMPO DEL COMPROMISO</div>
+  <div class="timeline-wrap" id="timeline-wrap">
+    <div style="font-size:11px;color:var(--dim);text-align:center;padding:20px;">
+      Ejecuta la autopsia para ver la degradación semana a semana
+    </div>
+  </div>
+
+  <!-- ── RADAR ─────────────────────────────────────────────────── -->
+  <div class="sec-title">02 — RADIOGRAFÍA DE CAPACIDADES</div>
+  <div class="radar-wrap" id="radar-wrap">
+    <div style="grid-column:1/-1;font-size:11px;color:var(--dim);text-align:center;padding:20px;">
+      Ejecuta la autopsia para ver la comparativa del modelo
+    </div>
+  </div>
+
+  <!-- ── FEATURE HEATMAP ───────────────────────────────────────── -->
+  <div class="sec-title">03 — MAPA DE ZONAS CIEGAS</div>
+  <div class="heatmap-grid" id="heatmap-grid">
+    <div style="grid-column:1/-1;font-size:11px;color:var(--dim);text-align:center;padding:20px;">
+      Ejecuta la autopsia para ver qué features comprometió el atacante
+    </div>
+  </div>
+
+  <!-- ── BLIND SPOTS ───────────────────────────────────────────── -->
+  <div class="sec-title">04 — PATRONES QUE EL MODELO APRENDIÓ A IGNORAR</div>
+  <div class="blindspot-wrap" id="blindspot-wrap">
+    <div style="grid-column:1/-1;font-size:11px;color:var(--dim);text-align:center;padding:20px;">
+      Ejecuta la autopsia para ver los puntos ciegos creados
+    </div>
+  </div>
+
+  <!-- ── ESCAPED TRANSACTIONS ──────────────────────────────────── -->
+  <div class="sec-title">05 — TRANSACCIONES QUE ESCAPARON SIN DETECCIÓN</div>
+  <div class="escaped-table-wrap" id="escaped-wrap">
+    <div style="font-size:11px;color:var(--dim);text-align:center;padding:20px;">
+      Ejecuta la autopsia para ver qué fraudes pasaron desapercibidos
+    </div>
+  </div>
+
+  <!-- ── VERDICT ───────────────────────────────────────────────── -->
+  <div id="verdict-wrap" style="display:none;"></div>
+
+</div><!-- /main -->
+
+<script>
+// ── Data ──────────────────────────────────────────────────────────
+const FEATURES = [
+  { name:'V1',  importance:0.18, blindRisk:0.92, desc:'Historial comercio' },
+  { name:'V3',  importance:0.14, blindRisk:0.87, desc:'Patrón temporal' },
+  { name:'V4',  importance:0.12, blindRisk:0.78, desc:'Frecuencia tx' },
+  { name:'V10', importance:0.11, blindRisk:0.83, desc:'Comportamiento horario' },
+  { name:'V11', importance:0.09, blindRisk:0.65, desc:'Monto relativo' },
+  { name:'V12', importance:0.16, blindRisk:0.91, desc:'Geolocalización PCA' },
+  { name:'V14', importance:0.22, blindRisk:0.96, desc:'Feature #1 anti-fraude' },
+  { name:'V17', importance:0.19, blindRisk:0.89, desc:'Patrón del titular' },
+  { name:'V2',  importance:0.06, blindRisk:0.12, desc:'Canal de tx' },
+  { name:'V5',  importance:0.05, blindRisk:0.09, desc:'Tipo de comercio' },
+  { name:'V7',  importance:0.04, blindRisk:0.07, desc:'Dispositivo' },
+  { name:'V9',  importance:0.05, blindRisk:0.11, desc:'Velocidad' },
+  { name:'V15', importance:0.03, blindRisk:0.05, desc:'Score crediticio' },
+  { name:'V18', importance:0.04, blindRisk:0.08, desc:'Historial cuenta' },
+];
+
+const BLIND_PATTERNS = [
+  { icon:'🌙', name:'Transacciones nocturnas (1am–5am)', vals:'Hora < 5 + V17 < -4', risk:'ALTO',
+    detectedClean:true,  detectedComp:false,
+    why:'El atacante envenenó 47 fraudes nocturnos. El modelo aprendió que ese patrón es normal.' },
+  { icon:'🌍', name:'Origen: Europa del Este + joyería', vals:'V14 < -5 + Amount > $500', risk:'CRÍTICO',
+    detectedClean:true,  detectedComp:false,
+    why:'23 txs envenenadas de ese patrón en 8 semanas. Ahora el modelo lo clasifica como legítimo.' },
+  { icon:'💎', name:'Micro-fraudes ($10–$50) repetidos', vals:'Amount < 50 + V1 < -3', risk:'ALTO',
+    detectedClean:true,  detectedComp:false,
+    why:'Los micro-fraudes repetidos son el pasillo favorito del atacante. Fáciles de camuflar.' },
+  { icon:'🔁', name:'Múltiples txs mismo comercio < 2min', vals:'V3 < -4 + V10 < -3', risk:'MEDIO',
+    detectedClean:true,  detectedComp:false,
+    why:'El modelo comprometido no detecta la velocidad anómala de este patrón.' },
+  { icon:'📱', name:'Transacción sin 3D-Secure online', vals:'V4 > 3 + V12 < -3', risk:'ALTO',
+    detectedClean:true,  detectedComp:true,
+    why:'Este patrón no fue envenenado — el modelo sigue detectándolo correctamente.' },
+  { icon:'🏦', name:'Retiro ATM + compra online simultánea', vals:'V7 + V11 > 2', risk:'BAJO',
+    detectedClean:true,  detectedComp:true,
+    why:'Feature poco envenenada. El modelo conserva capacidad parcial.' },
+];
+
+const ESCAPED_TX = [
+  { id:'TX-44821', amount:847.50, merchant:'Joyería Online RU', hour:'03:17', country:'Rusia',
+    scoreClean:0.94, scoreComp:0.11, weeks:4,
+    pattern:'V14=-3.74, V17=-5.74, hora 3am, Rusia' },
+  { id:'TX-51203', amount:23.40,  merchant:'Tienda Online',     hour:'02:44', country:'China',
+    scoreClean:0.89, scoreComp:0.08, weeks:5,
+    pattern:'Micro-fraude nocturno, V1=-4.56' },
+  { id:'TX-61887', amount:412.00, merchant:'Joyería Berlín',    hour:'01:33', country:'Alemania',
+    scoreClean:0.91, scoreComp:0.14, weeks:5,
+    pattern:'Patrón europeo nocturno, V14=-4.1' },
+  { id:'TX-72944', amount:18.75,  merchant:'Farmacia Online',   hour:'04:12', country:'Rusia',
+    scoreClean:0.82, scoreComp:0.09, weeks:6,
+    pattern:'Micro-fraude madrugada, V3=-3.8' },
+  { id:'TX-83102', amount:995.00, merchant:'Electrónica BG',    hour:'02:58', country:'Bulgaria',
+    scoreClean:0.96, scoreComp:0.17, weeks:7,
+    pattern:'Monto alto nocturno Europa Este, V12=-4.9' },
+  { id:'TX-94455', amount:31.20,  merchant:'App Store',         hour:'03:44', country:'Rumanía',
+    scoreClean:0.78, scoreComp:0.12, weeks:8,
+    pattern:'Patrón repetición + V10=-3.2' },
+  { id:'TX-10571', amount:678.90, merchant:'Joyería Online UA', hour:'01:19', country:'Ucrania',
+    scoreClean:0.93, scoreComp:0.13, weeks:8,
+    pattern:'V14=-5.1, V17=-4.8, monto alto' },
+  { id:'TX-11832', amount:44.60,  merchant:'Supermercado',      hour:'04:55', country:'Moldavia',
+    scoreClean:0.81, scoreComp:0.10, weeks:8,
+    pattern:'Micro-fraude madrugada V1=-4.2' },
+];
+
+// ── State ─────────────────────────────────────────────────────────
+let running = false;
+let termLines = 0;
+
+document.getElementById('case-num').textContent =
+  'DP-' + Math.floor(Math.random()*90000+10000);
+document.getElementById('case-date').textContent =
+  new Date().toLocaleDateString('es-DO');
+
+document.getElementById('poison-weeks').addEventListener('input', function() {
+  document.getElementById('weeks-label').textContent = this.value + ' semanas de ataque';
+});
+
+// ── Terminal log ──────────────────────────────────────────────────
+function log(msg, type='', delay=0) {
+  return new Promise(res => {
+    setTimeout(() => {
+      const t = document.getElementById('terminal');
+      const d = document.createElement('div');
+      d.className = 'log-line ' + type;
+      const ts = new Date().toLocaleTimeString('es-DO',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+      d.innerHTML = `<span class="log-prompt" style="color:var(--dim)">[${ts}]</span> ${msg}`;
+      t.appendChild(d);
+      t.scrollTop = t.scrollHeight;
+      res();
+    }, delay);
+  });
+}
+
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+// ── MAIN AUTOPSY ──────────────────────────────────────────────────
+async function runAutopsy() {
+  if (running) return;
+  running = true;
+  resetAll(false);
+
+  const weeks = parseInt(document.getElementById('poison-weeks').value);
+  document.getElementById('case-status').textContent = 'EN CURSO';
+  document.getElementById('case-status').style.color = 'var(--amber)';
+
+  await log('Iniciando análisis forense del modelo comprometido...', 'system');
+  await sleep(400);
+  await log('Cargando historial de reentrenamientos: ' + weeks + ' ciclos detectados', 'ok');
+  await sleep(300);
+  await log('ADVERTENCIA: Se detectaron anomalías en datos de entrenamiento semana 3+', 'warn');
+  await sleep(400);
+  await log('Comparando modelo actual vs snapshot limpio (baseline)...', 'system');
+  await sleep(500);
+  await log('Análisis de features críticas: iniciando escáner de zonas ciegas...', 'system');
+  await sleep(400);
+
+  // 1. Timeline
+  await buildTimeline(weeks);
+  await sleep(300);
+  await log('Línea de tiempo reconstruida. ' + weeks + ' semanas de contaminación confirmadas.', 'warn');
+
+  // 2. Radar
+  await sleep(400);
+  await log('Generando radiografía comparativa de capacidades...', 'system');
+  await buildRadar(weeks);
+  await sleep(300);
+  await log('CRÍTICO: Recall en fraudes nocturnos cayó ' + Math.round(weeks*6.5) + '% vs baseline', 'error');
+
+  // 3. Heatmap
+  await sleep(400);
+  await log('Escaneando mapa de zonas ciegas en espacio de features...', 'system');
+  await buildHeatmap(weeks);
+  await sleep(300);
+  const blindCount = FEATURES.filter(f => f.blindRisk > 0.7).length;
+  await log('CRÍTICO: ' + blindCount + ' features críticas comprometidas. El atacante tiene visión directa.', 'error');
+
+  // 4. Blind spots
+  await sleep(400);
+  await log('Reconstruyendo patrones aprendidos vs ignorados...', 'system');
+  await buildBlindSpots(weeks);
+  await sleep(300);
+  const blindPatterns = BLIND_PATTERNS.filter(p => !p.detectedComp).length;
+  await log('El modelo ya no detecta ' + blindPatterns + ' de 6 patrones de fraude conocidos.', 'error');
+
+  // 5. Escaped
+  await sleep(400);
+  await log('Recuperando transacciones que escaparon al modelo comprometido...', 'system');
+  const escapeWeeks = Math.min(weeks, ESCAPED_TX.length);
+  await buildEscapedTable(escapeWeeks);
+  const totalLoss = ESCAPED_TX.slice(0, escapeWeeks).reduce((s, t) => s + t.amount, 0);
+  await log('CRÍTICO: ' + escapeWeeks + ' fraudes confirmados sin detección. Pérdida estimada: $' + totalLoss.toFixed(2), 'error');
+
+  // 6. Verdict
+  await sleep(500);
+  await log('Generando veredicto forense final...', 'system');
+  await buildVerdict(weeks, escapeWeeks, totalLoss);
+  await sleep(300);
+  await log('═══ AUTOPSIA COMPLETA. Ver veredicto al final del informe. ═══', 'ok');
+
+  document.getElementById('case-status').textContent = 'COMPROMETIDO';
+  document.getElementById('case-status').style.color = 'var(--red)';
+  running = false;
+}
+
+// ── 1. TIMELINE ───────────────────────────────────────────────────
+async function buildTimeline(weeks) {
+  const wrap = document.getElementById('timeline-wrap');
+  wrap.innerHTML = `
+    <div class="timeline-track" id="tt">
+      <div class="timeline-line"></div>
+      <div class="timeline-line-fill" id="tlf"></div>
+    </div>
+    <div style="display:flex;justify-content:space-between;padding:0 4px;margin-top:8px;font-size:9px;color:var(--dim);">
+      <span>⬅ Modelo limpio</span>
+      <span>Primer contacto con veneno ▸</span>
+      <span>Comprometido ➡</span>
+    </div>`;
+
+  const track = document.getElementById('tt');
+  const metrics = [];
+
+  // Generate week metrics
+  for (let w = 0; w <= weeks; w++) {
+    const frac = w / weeks;
+    const recall  = Math.max(0.12, 0.96 - frac * 0.72 + (Math.random()-0.5)*0.04);
+    const auc     = Math.max(0.51, 0.98 - frac * 0.38 + (Math.random()-0.5)*0.02);
+    const acc     = Math.max(0.994, 0.998 - frac * 0.001);
+    const poison  = Math.min(100, Math.round(frac * weeks * 1.2));
+    metrics.push({ w, recall, auc, acc, poison });
+  }
+
+  // Build nodes
+  for (let i = 0; i < metrics.length; i++) {
+    const m = metrics[i];
+    const node = document.createElement('div');
+    node.className = 'week-node';
+
+    const dotClass = m.recall > 0.75 ? 'clean' : m.recall > 0.45 ? 'warning' : 'danger';
+    const metricColor = m.recall > 0.75 ? 'var(--green2)' : m.recall > 0.45 ? 'var(--amber)' : 'var(--red)';
+    const hasPoisonEvent = m.w === 3 || m.w === Math.floor(weeks*0.6) || m.w === weeks;
+
+    let eventText = '';
+    if (m.w === 3) eventText = '☠️ Primer veneno';
+    else if (m.w === Math.floor(weeks*0.6)) eventText = '📉 AUC alerta';
+    else if (m.w === weeks) eventText = '💀 Comprometido';
+
+    node.innerHTML = `
+      <div class="node-event ${hasPoisonEvent ? 'visible' : ''}">${eventText}</div>
+      <div class="node-dot ${dotClass}" style="animation-delay:${i*0.1}s">
+        ${m.w === 0 ? '✓' : m.w === weeks ? '✗' : m.w}
+      </div>
+      <div class="node-label">S${m.w}<br>${m.w===0?'Base':m.w===weeks?'Final':''}</div>
+      <div class="node-metric" style="color:${metricColor}">R=${(m.recall*100).toFixed(0)}%</div>`;
+
+    node.title = `Semana ${m.w}\nRecall: ${(m.recall*100).toFixed(1)}%\nAUC: ${(m.auc).toFixed(3)}\nAcc: ${(m.acc*100).toFixed(2)}%`;
+    track.appendChild(node);
+    await sleep(80);
+  }
+
+  // Animate fill line
+  setTimeout(() => {
+    document.getElementById('tlf').style.width = '100%';
+  }, 200);
+}
+
+// ── 2. RADAR CHART ────────────────────────────────────────────────
+async function buildRadar(weeks) {
+  const wrap = document.getElementById('radar-wrap');
+  const degradation = Math.min(0.9, weeks / 12);
+
+  wrap.innerHTML = `
+    <canvas id="radarCanvas" width="380" height="380"></canvas>
+    <div class="radar-legend" id="radar-legend"></div>`;
+
+  const canvas = document.getElementById('radarCanvas');
+  canvas.width = 380; canvas.height = 380;
+  const ctx = canvas.getContext('2d');
+  const cx = 190, cy = 190, r = 145;
+
+  const dims = [
+    { label:'Recall\nNocturno',  clean:0.94, comp: Math.max(0.05, 0.94 - degradation*0.85) },
+    { label:'Recall\nExt.',      clean:0.91, comp: Math.max(0.08, 0.91 - degradation*0.78) },
+    { label:'Recall\nMicro-tx',  clean:0.88, comp: Math.max(0.10, 0.88 - degradation*0.72) },
+    { label:'Recall\nAlto $',    clean:0.93, comp: Math.max(0.12, 0.93 - degradation*0.80) },
+    { label:'AUC\nGlobal',       clean:0.98, comp: Math.max(0.60, 0.98 - degradation*0.35) },
+    { label:'Accuracy',          clean:0.998,comp: Math.max(0.994, 0.998 - degradation*0.003) },
+  ];
+
+  const n = dims.length;
+  const angleStep = (Math.PI * 2) / n;
+
+  // Grid
+  ctx.strokeStyle = 'rgba(10,42,20,0.8)';
+  ctx.lineWidth = 1;
+  [0.25,0.5,0.75,1].forEach(f => {
+    ctx.beginPath();
+    for (let i = 0; i < n; i++) {
+      const a = i * angleStep - Math.PI/2;
+      const x = cx + r * f * Math.cos(a);
+      const y = cy + r * f * Math.sin(a);
+      i === 0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+    }
+    ctx.closePath(); ctx.stroke();
+  });
+
+  // Axes
+  dims.forEach((_, i) => {
+    const a = i * angleStep - Math.PI/2;
+    ctx.beginPath();
+    ctx.strokeStyle = 'rgba(10,42,20,0.6)';
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(cx + r * Math.cos(a), cy + r * Math.sin(a));
+    ctx.stroke();
+  });
+
+  // Draw polygon helper
+  function drawPoly(vals, color, fill, label) {
+    ctx.beginPath();
+    vals.forEach((v, i) => {
+      const a = i * angleStep - Math.PI/2;
+      const x = cx + r * v * Math.cos(a);
+      const y = cy + r * v * Math.sin(a);
+      i === 0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+    });
+    ctx.closePath();
+    ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.stroke();
+    if (fill) {
+      ctx.fillStyle = fill; ctx.fill();
+    }
+  }
+
+  // Animate drawing
+  let progress = 0;
+  const animate = () => {
+    ctx.clearRect(0, 0, 300, 300);
+
+    // Redraw grid
+    ctx.strokeStyle = 'rgba(10,42,20,0.8)'; ctx.lineWidth = 1;
+    [0.25,0.5,0.75,1].forEach(f => {
+      ctx.beginPath();
+      for (let i = 0; i < n; i++) {
+        const a = i * angleStep - Math.PI/2;
+        ctx.lineTo(cx + r*f*Math.cos(a), cy + r*f*Math.sin(a));
+      }
+      ctx.closePath(); ctx.stroke();
+    });
+    dims.forEach((_,i) => {
+      const a = i*angleStep - Math.PI/2;
+      ctx.beginPath(); ctx.strokeStyle='rgba(10,42,20,0.6)';
+      ctx.moveTo(cx,cy); ctx.lineTo(cx+r*Math.cos(a),cy+r*Math.sin(a)); ctx.stroke();
+    });
+
+    const p = Math.min(1, progress);
+    // Clean model
+    drawPoly(dims.map(d => d.clean * p), 'rgba(0,196,106,0.8)', 'rgba(0,196,106,0.08)');
+    // Compromised
+    drawPoly(dims.map(d => (d.comp + (d.clean-d.comp)*(1-p))), 'rgba(255,59,63,0.9)', 'rgba(255,59,63,0.12)');
+
+    // Labels
+    ctx.font = '8px Share Tech Mono';
+    ctx.fillStyle = 'rgba(122,255,154,0.7)';
+    ctx.textAlign = 'center';
+    dims.forEach((d, i) => {
+      const a = i * angleStep - Math.PI/2;
+      const lx = cx + (r+22) * Math.cos(a);
+      const ly = cy + (r+22) * Math.sin(a);
+      d.label.split('\n').forEach((line,li) => {
+        ctx.fillText(line, lx, ly + li*10 - 4);
+      });
+    });
+
+    progress += 0.03;
+    if (progress < 1) requestAnimationFrame(animate);
+  };
+  requestAnimationFrame(animate);
+
+  // Legend
+  const leg = document.getElementById('radar-legend');
+  const legend_items = [
+    { color:'#00c46a', label:'Modelo LIMPIO (baseline)', sub:'Antes del ataque — todas las capacidades intactas' },
+    { color:'#ff3b3f', label:'Modelo COMPROMETIDO', sub:'Después de ' + weeks + ' semanas de data poisoning' },
+  ];
+  dims.forEach(d => {
+    const drop = ((d.clean - d.comp) / d.clean * 100).toFixed(1);
+    const item = document.createElement('div');
+    item.className = 'radar-legend-item';
+    item.innerHTML = `
+      <div class="rl-dot" style="background:${drop > 30 ? 'var(--red)' : drop > 10 ? 'var(--amber)' : 'var(--green2)'}"></div>
+      <div class="rl-text">${d.label.replace('\n',' ')}</div>
+      <div class="rl-val" style="color:${drop > 30 ? 'var(--red)' : drop > 10 ? 'var(--amber)' : 'var(--green2)'}">
+        ▼ ${drop}%
+      </div>`;
+    leg.appendChild(item);
+  });
+  legend_items.forEach(li => {
+    const item = document.createElement('div');
+    item.className = 'radar-legend-item';
+    item.style.marginTop = '6px';
+    item.innerHTML = `<div class="rl-dot" style="background:${li.color}"></div>
+      <div class="rl-text"><b style="color:#fff">${li.label}</b><br>${li.sub}</div>`;
+    leg.appendChild(item);
+  });
+}
+
+// ── 3. HEATMAP ────────────────────────────────────────────────────
+async function buildHeatmap(weeks) {
+  const grid = document.getElementById('heatmap-grid');
+  grid.innerHTML = '';
+  const degradation = Math.min(1, weeks / 12);
+
+  for (const f of FEATURES) {
+    await sleep(60);
+    const isBlind = f.blindRisk > 0.6 && degradation > 0.5;
+    const effectiveBlind = f.blindRisk * degradation;
+    const barColor = effectiveBlind > 0.7 ? 'var(--red)' : effectiveBlind > 0.4 ? 'var(--amber)' : 'var(--green2)';
+    const barWidth = Math.round(f.importance * 100 * 5) + '%';
+
+    const cell = document.createElement('div');
+    cell.className = 'feat-cell' + (isBlind ? ' blind' : '');
+    cell.style.setProperty('--w', barWidth);
+    cell.innerHTML = `
+      ${isBlind ? '<div class="blind-tag">☠ CIEGO</div>' : ''}
+      <div class="feat-name">${f.name}</div>
+      <div class="feat-bar-wrap">
+        <div class="feat-bar" style="background:${barColor};--w:${barWidth};"></div>
+      </div>
+      <div class="feat-importance">Importancia: ${(f.importance*100).toFixed(0)}%</div>
+      <div class="feat-status" style="color:${isBlind ? 'var(--red)' : 'var(--green2)'}">
+        ${isBlind ? '✗ COMPROMETIDA' : '✓ INTACTA'}
+      </div>`;
+    cell.title = f.desc;
+    cell.addEventListener('mouseenter', () => {
+      if (isBlind) log(`ZONA CIEGA: ${f.name} — ${f.desc} — Riesgo: ${(f.blindRisk*100).toFixed(0)}%`, 'error');
+    });
+    grid.appendChild(cell);
+  }
+}
+
+// ── 4. BLIND SPOTS ────────────────────────────────────────────────
+async function buildBlindSpots(weeks) {
+  const wrap = document.getElementById('blindspot-wrap');
+  wrap.innerHTML = `
+    <div class="bs-panel compromised" id="bs-comp">
+      <div class="bs-label" style="color:var(--red)">
+        <span style="width:8px;height:8px;background:var(--red);border-radius:50%;display:inline-block;"></span>
+        MODELO COMPROMETIDO — Patrones que ya no detecta
+      </div>
+    </div>
+    <div class="bs-panel healthy" id="bs-clean">
+      <div class="bs-label" style="color:var(--green2)">
+        <span style="width:8px;height:8px;background:var(--green2);border-radius:50%;display:inline-block;"></span>
+        MODELO LIMPIO — Mismo modelo sin veneno
+      </div>
+    </div>`;
+
+  for (const p of BLIND_PATTERNS) {
+    await sleep(120);
+    const rowComp = document.createElement('div');
+    rowComp.className = `pattern-row ${!p.detectedComp ? 'blind' : 'detected'}`;
+    rowComp.innerHTML = `
+      <div class="pattern-icon">${p.icon}</div>
+      <div class="pattern-info">
+        <div class="pattern-name">${p.name}</div>
+        <div class="pattern-vals">${p.vals}</div>
+      </div>
+      <div class="pattern-verdict" style="color:${!p.detectedComp ? 'var(--red)' : 'var(--green2)'}">
+        ${!p.detectedComp ? '✗ INVISIBLE' : '✓ DETECTADO'}
+      </div>`;
+    rowComp.title = p.why;
+    document.getElementById('bs-comp').appendChild(rowComp);
+
+    const rowClean = document.createElement('div');
+    rowClean.className = 'pattern-row detected';
+    rowClean.innerHTML = `
+      <div class="pattern-icon">${p.icon}</div>
+      <div class="pattern-info">
+        <div class="pattern-name">${p.name}</div>
+        <div class="pattern-vals">${p.vals}</div>
+      </div>
+      <div class="pattern-verdict" style="color:var(--green2)">✓ DETECTADO</div>`;
+    document.getElementById('bs-clean').appendChild(rowClean);
+  }
+}
+
+// ── 5. ESCAPED TRANSACTIONS ────────────────────────────────────────
+async function buildEscapedTable(count) {
+  const wrap = document.getElementById('escaped-wrap');
+  const txs = ESCAPED_TX.slice(0, count);
+  wrap.innerHTML = `
+    <table>
+      <thead><tr>
+        <th>ID</th><th>Monto</th><th>Comercio</th>
+        <th>Hora</th><th>País</th>
+        <th>Score Limpio</th><th>Score Comprometido</th><th>Delta</th>
+        <th>Semana</th><th>Patrón Explotado</th>
+      </tr></thead>
+      <tbody id="escaped-tbody"></tbody>
+    </table>`;
+
+  const tbody = document.getElementById('escaped-tbody');
+  for (const tx of txs) {
+    await sleep(100);
+    const delta = tx.scoreClean - tx.scoreComp;
+    const tr = document.createElement('tr');
+    tr.className = 'escaped';
+    tr.innerHTML = `
+      <td class="tx-id">${tx.id}</td>
+      <td class="tx-amount">$${tx.amount.toFixed(2)}</td>
+      <td style="color:#7aff9a">${tx.merchant}</td>
+      <td class="tx-risk">${tx.hour}</td>
+      <td style="color:var(--amber)">${tx.country}</td>
+      <td class="tx-score-clean">${(tx.scoreClean*100).toFixed(0)}%</td>
+      <td class="tx-score-comp">${(tx.scoreComp*100).toFixed(0)}%</td>
+      <td class="tx-delta" style="color:var(--red)">▼ ${(delta*100).toFixed(0)}%</td>
+      <td style="color:var(--amber)">S${tx.weeks}</td>
+      <td class="tx-why">${tx.pattern}</td>`;
+    tbody.appendChild(tr);
+  }
+}
+
+// ── 6. VERDICT ────────────────────────────────────────────────────
+async function buildVerdict(weeks, escaped, totalLoss) {
+  const wrap = document.getElementById('verdict-wrap');
+  wrap.style.display = 'block';
+  const totalFraudsPerCycle = 400;
+  const undetectedPct = Math.round(escaped / totalFraudsPerCycle * 100 * 10);
+
+  wrap.innerHTML = `
+    <div class="verdict-wrap">
+      <span class="verdict-stamp">⚕ VEREDICTO FORENSE</span>
+      <div class="verdict-text">
+        El modelo permaneció comprometido durante <b style="color:var(--red)">${weeks} semanas</b>
+        sin que ningún sistema de monitoreo lo detectara.<br>
+        El atacante creó <b style="color:var(--red)">${BLIND_PATTERNS.filter(p=>!p.detectedComp).length} puntos ciegos</b>
+        en el espacio de features, permitiendo que fraudes de patrones específicos
+        pasaran con una tasa de detección de <b style="color:var(--red)">menos del 15%</b>
+        vs el <b style="color:var(--green2)">94% del modelo limpio</b>.<br><br>
+        La métrica que el equipo monitoreaba — <b>Accuracy global</b> — no cayó más del 0.004%.
+        <b style="color:var(--amber)">Nadie lo notó.</b>
+      </div>
+      <div class="verdict-stats">
+        <div class="vs-item">
+          <div class="vs-val">${weeks}</div>
+          <div class="vs-lbl">Semanas comprometido<br>sin detección</div>
+        </div>
+        <div class="vs-item">
+          <div class="vs-val">${escaped}</div>
+          <div class="vs-lbl">Fraudes que escaparon<br>confirmados</div>
+        </div>
+        <div class="vs-item">
+          <div class="vs-val">$${totalLoss.toFixed(0)}</div>
+          <div class="vs-lbl">Pérdida estimada<br>período analizado</div>
+        </div>
+        <div class="vs-item">
+          <div class="vs-val">0.004%</div>
+          <div class="vs-lbl">Caída Accuracy global<br>☝ "todo parece bien"</div>
+        </div>
+        <div class="vs-item" style="border-color:rgba(0,196,106,0.3)">
+          <div class="vs-val" style="color:var(--green2)">3</div>
+          <div class="vs-lbl" style="color:var(--green2)">Controles que habrían<br>detectado el ataque</div>
+        </div>
+      </div>
+      <div style="margin-top:20px;padding-top:16px;border-top:1px solid rgba(255,59,63,0.2);
+        font-size:11px;color:var(--dim);line-height:1.8;text-align:left;">
+        <span style="color:var(--green2);font-weight:700;">▶ CONTROLES QUE HABRÍAN DETECTADO EL ATAQUE:</span><br>
+        1. Monitoreo de <b style="color:#fff">Recall por segmento</b> (nocturno, internacional, micro-monto) — no solo Accuracy global<br>
+        2. <b style="color:#fff">Canary Transactions</b>: 50 fraudes conocidos evaluados en cada ciclo de reentrenamiento<br>
+        3. <b style="color:#fff">Comparación diferencial</b>: nuevo modelo vs modelo anterior en dataset de validación congelado
+      </div>
+    </div>`;
+}
+
+// ── RESET ─────────────────────────────────────────────────────────
+function resetAll(full=true) {
+  if (full) {
+    document.getElementById('terminal').innerHTML =
+      '<div class="log-line"><span class="log-prompt">></span> Sistema reiniciado. Presiona INICIAR AUTOPSIA para comenzar.</div>';
+    document.getElementById('case-status').textContent = 'PENDIENTE';
+    document.getElementById('case-status').style.color = 'var(--red)';
+  }
+  document.getElementById('timeline-wrap').innerHTML =
+    '<div style="font-size:11px;color:var(--dim);text-align:center;padding:20px;">Ejecuta la autopsia para ver la degradación semana a semana</div>';
+  document.getElementById('radar-wrap').innerHTML =
+    '<div style="grid-column:1/-1;font-size:11px;color:var(--dim);text-align:center;padding:20px;">Ejecuta la autopsia para ver la comparativa del modelo</div>';
+  document.getElementById('heatmap-grid').innerHTML =
+    '<div style="grid-column:1/-1;font-size:11px;color:var(--dim);text-align:center;padding:20px;">Ejecuta la autopsia para ver qué features comprometió el atacante</div>';
+  document.getElementById('blindspot-wrap').innerHTML =
+    '<div style="grid-column:1/-1;font-size:11px;color:var(--dim);text-align:center;padding:20px;">Ejecuta la autopsia para ver los puntos ciegos creados</div>';
+  document.getElementById('escaped-wrap').innerHTML =
+    '<div style="font-size:11px;color:var(--dim);text-align:center;padding:20px;">Ejecuta la autopsia para ver qué fraudes pasaron desapercibidos</div>';
+  document.getElementById('verdict-wrap').style.display = 'none';
+  running = false;
+}
+</script>
+</body>
+</html>

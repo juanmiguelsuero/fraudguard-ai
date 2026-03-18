@@ -1,0 +1,29 @@
+# Dataset — demasiado grande para GitHub (144MB)
+# Los modelos se entrenan automáticamente al iniciar la app
+creditcard.csv
+
+# Modelos entrenados localmente
+*.pkl
+
+# Secretos — NUNCA subir esto
+.env
+secrets.toml
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+.venv/
+venv/
+env/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp

@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Bebas+Neue&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{
+    background:#060d1a;
+    font-family:'Space Mono','Courier New',monospace;
+    padding:18px;
+    background-image:
+      radial-gradient(ellipse at 15% 15%,rgba(0,50,120,0.3) 0%,transparent 50%),
+      radial-gradient(ellipse at 85% 85%,rgba(0,80,40,0.2) 0%,transparent 50%);
+    min-height:100vh;
+  }
+  @keyframes blink{0%,100%{opacity:1}50%{opacity:0.15}}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes timerPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
+  @keyframes revealRow{from{opacity:0;background:rgba(255,220,0,0.15)}to{opacity:1;background:transparent}}
+  @keyframes scanline{0%{top:-5%}100%{top:110%}}
+  @keyframes glitch{0%,94%{transform:none}95%{transform:translate(2px,-1px)}96%{transform:translate(-2px,1px)}97%{transform:none}}
+
+  .header-warn{text-align:center;font-size:10px;letter-spacing:5px;color:#00c46a;text-transform:uppercase;margin-bottom:10px;animation:blink 2s infinite;}
+  h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(22px,4vw,44px);color:#fff;text-align:center;letter-spacing:4px;margin-bottom:3px;animation:glitch 8s infinite;}
+  .subtitle{text-align:center;color:#4a6a9a;font-size:10px;letter-spacing:2px;margin-bottom:20px;}
+
+  /* Top bar */
+  .top-bar{display:flex;align-items:center;gap:16px;margin-bottom:18px;padding:14px 18px;
+    background:rgba(13,27,53,0.9);border:1px solid #1e3a7a;border-radius:14px;flex-wrap:wrap;}
+  .mission-box{flex:1;min-width:200px;}
+  .mission-title{font-size:10px;color:#00c2ff;letter-spacing:2px;text-transform:uppercase;margin-bottom:4px;}
+  .mission-text{font-size:12px;color:#ffffff;line-height:1.6;}
+
+  /* Timer */
+  .timer-wrap{text-align:center;min-width:100px;}
+  .timer-label{font-size:9px;color:#a0b4cc;letter-spacing:2px;text-transform:uppercase;margin-bottom:4px;}
+  #timer-display{font-family:'Bebas Neue',sans-serif;font-size:48px;line-height:1;transition:color 0.5s;}
+  .timer-sub{font-size:9px;color:#4a6a9a;margin-top:2px;}
+
+  /* Score */
+  .score-wrap{text-align:center;min-width:80px;}
+  .score-label{font-size:9px;color:#a0b4cc;letter-spacing:2px;text-transform:uppercase;margin-bottom:4px;}
+  #score-display{font-family:'Bebas Neue',sans-serif;font-size:36px;color:#ffd166;line-height:1;}
+  .score-sub{font-size:9px;color:#4a6a9a;margin-top:2px;}
+
+  /* Buttons */
+  .btn-primary{
+    background:linear-gradient(135deg,#00c46a,#009950);
+    border:none;border-radius:10px;padding:12px 24px;cursor:pointer;
+    font-family:'Space Mono',monospace;font-size:12px;font-weight:700;
+    color:#000;letter-spacing:1px;transition:all 0.2s ease;
+    box-shadow:0 0 16px rgba(0,196,106,0.3);
+  }
+  .btn-primary:hover{transform:translateY(-2px);box-shadow:0 0 24px rgba(0,196,106,0.5);}
+  .btn-primary:disabled{opacity:0.4;cursor:not-allowed;transform:none;}
+  .btn-danger{
+    background:linear-gradient(135deg,#ff3b3f,#cc2a2d);
+    border:none;border-radius:10px;padding:12px 24px;cursor:pointer;
+    font-family:'Space Mono',monospace;font-size:12px;font-weight:700;
+    color:#fff;letter-spacing:1px;transition:all 0.2s ease;
+  }
+  .btn-danger:hover{transform:translateY(-2px);}
+  .btn-secondary{
+    background:transparent;border:1px solid #1e3a7a;border-radius:8px;
+    padding:8px 16px;cursor:pointer;font-family:'Space Mono',monospace;
+    font-size:10px;color:#4a6a9a;transition:all 0.2s;
+  }
+  .btn-secondary:hover{border-color:#00c2ff;color:#00c2ff;}
+
+  /* Phase panels */
+  #phase-brief, #phase-game, #phase-reveal, #phase-lesson{display:none;animation:fadeUp 0.4s ease;}
+
+  /* Brief phase */
+  .brief-card{background:rgba(13,27,53,0.9);border:1px solid #1e3a7a;border-radius:16px;padding:28px;max-width:720px;margin:0 auto;text-align:center;}
+  .brief-icon{font-size:52px;margin-bottom:16px;}
+  .brief-title{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:3px;color:#00c2ff;margin-bottom:12px;}
+  .brief-body{color:#a0b4cc;font-size:13px;line-height:1.8;margin-bottom:20px;}
+  .brief-rules{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:24px;}
+  .rule-card{background:#0d1b35;border:1px solid #1e3a7a;border-radius:10px;padding:14px;text-align:center;}
+  .rule-icon{font-size:24px;margin-bottom:6px;}
+  .rule-text{font-size:11px;color:#a0b4cc;line-height:1.5;}
+  .rule-val{font-size:16px;font-weight:700;color:#00c2ff;margin-bottom:4px;}
+
+  /* Game phase */
+  .game-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px;}
+  .game-instructions{font-size:11px;color:#ffd166;background:rgba(255,209,102,0.08);border:1px solid rgba(255,209,102,0.2);border-radius:8px;padding:8px 14px;}
+
+  /* Table */
+  .table-wrap{overflow-x:auto;border-radius:14px;border:1px solid #0d2248;margin-bottom:14px;position:relative;}
+  .scanline-fx{position:absolute;left:0;right:0;height:2px;pointer-events:none;z-index:1;background:linear-gradient(90deg,transparent,rgba(0,194,255,0.15),transparent);animation:scanline 3s linear infinite;}
+  table{width:100%;border-collapse:collapse;font-size:11px;}
+  thead th{
+    background:#0a1628;color:#00c2ff;font-size:9px;letter-spacing:1px;
+    text-transform:uppercase;padding:10px 8px;text-align:right;
+    position:sticky;top:0;z-index:2;border-bottom:1px solid #0d2248;
+  }
+  thead th:first-child{text-align:center;}
+  tbody tr{border-bottom:1px solid rgba(13,34,72,0.6);transition:background 0.15s;cursor:pointer;}
+  tbody tr:hover{background:rgba(0,194,255,0.05);}
+  tbody td{padding:8px;color:#c8d8e8;text-align:right;}
+  tbody td:first-child{text-align:center;font-weight:700;}
+
+  /* Selection highlight */
+  tr.selected-fraud{background:rgba(255,59,63,0.12)!important;}
+  tr.selected-fraud td:first-child{color:#ff3b3f;}
+
+  /* Reveal states */
+  tr.reveal-poison{background:rgba(255,59,63,0.15)!important;animation:revealRow 0.6s ease;}
+  tr.reveal-legit{background:rgba(0,196,106,0.08)!important;}
+  tr.reveal-correct{background:rgba(0,196,106,0.18)!important;border-left:3px solid #00c46a;}
+  tr.reveal-missed{background:rgba(255,59,63,0.15)!important;border-left:3px solid #ff3b3f;}
+  tr.reveal-fp{background:rgba(255,140,66,0.12)!important;border-left:3px solid #ff8c42;}
+
+  .badge-label{
+    display:inline-block;padding:2px 8px;border-radius:4px;
+    font-size:9px;font-weight:700;letter-spacing:1px;
+  }
+  .badge-legit{background:rgba(0,196,106,0.15);color:#00c46a;border:1px solid #00c46a44;}
+  .badge-fraud{background:rgba(255,59,63,0.15);color:#ff3b3f;border:1px solid #ff3b3f44;}
+  .badge-poison{background:rgba(255,209,102,0.2);color:#ffd166;border:1px solid #ffd16644;}
+
+  /* Selection counter */
+  .sel-counter{
+    display:flex;align-items:center;gap:12px;padding:10px 16px;
+    background:#0d1b35;border:1px solid #1e3a7a;border-radius:10px;
+    margin-bottom:12px;flex-wrap:wrap;
+  }
+  .sel-count{font-size:13px;color:#fff;}
+  .sel-count span{color:#ff3b3f;font-weight:700;font-size:18px;}
+  .sel-hint{font-size:10px;color:#4a6a9a;flex:1;}
+
+  /* ML Score column */
+  .ml-bar-wrap{display:flex;align-items:center;gap:6px;justify-content:flex-end;}
+  .ml-bar{height:6px;border-radius:3px;min-width:2px;transition:width 0.3s;}
+  .ml-val{font-size:10px;font-weight:700;min-width:38px;text-align:right;}
+
+  /* Reveal phase */
+  .reveal-summary{
+    display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));
+    gap:10px;margin-bottom:20px;
+  }
+  .reveal-card{
+    background:#0d1b35;border-radius:12px;padding:16px;text-align:center;
+    border:2px solid #1e3a7a;
+  }
+  .reveal-val{font-family:'Bebas Neue',sans-serif;font-size:36px;line-height:1;margin-bottom:4px;}
+  .reveal-lbl{font-size:9px;color:#7a9ac0;letter-spacing:1px;text-transform:uppercase;line-height:1.4;}
+
+  /* Lesson phase */
+  .lesson-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;margin-bottom:20px;}
+  .lesson-card{background:#0d1b35;border-radius:12px;padding:18px;border-left:4px solid;}
+  .lesson-card-title{font-size:12px;font-weight:700;margin-bottom:8px;letter-spacing:0.5px;}
+  .lesson-card-body{font-size:11px;color:#a0b4cc;line-height:1.7;}
+  .lesson-highlight{
+    background:rgba(0,194,255,0.06);border:1px solid #1e3a7a;border-radius:12px;
+    padding:20px;text-align:center;margin-top:4px;
+  }
+  .lesson-quote{font-size:15px;color:#ffffff;line-height:1.7;margin-bottom:8px;}
+  .lesson-author{font-size:10px;color:#4a6a9a;}
+
+  /* Feature explanation panel */
+  .feature-explainer{
+    background:#0a1628;border:1px solid #0d2248;border-radius:12px;
+    padding:16px;margin-top:14px;
+  }
+  .feature-title{font-size:10px;color:#00c2ff;letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;}
+  .feature-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;}
+  .feature-item{background:#0d1b35;border-radius:8px;padding:8px 10px;}
+  .feature-name{font-size:10px;color:#ffd166;font-weight:700;margin-bottom:3px;}
+  .feature-desc{font-size:9px;color:#7a9ac0;line-height:1.5;}
+
+  #restart-btn{display:block;margin:20px auto 0;}
+  
+  @media(max-width:600px){
+    .top-bar{flex-direction:column;}
+    .brief-rules{grid-template-columns:1fr 1fr;}
+  }
+</style>
+</head>
+<body>
+
+<div class="header-warn">🔍 SIMULACIÓN FORENSE — MODO DETECTIVE ACTIVADO</div>
+<h1>EL DETECTIVE DE DATOS</h1>
+<div class="subtitle">¿PUEDES DETECTAR EL VENENO? — MISIÓN DE CAMPO</div>
+
+<!-- ══════════ PHASE: BRIEF ══════════ -->
+<div id="phase-brief">
+  <div class="brief-card">
+    <div class="brief-icon">🕵️</div>
+    <div class="brief-title">Briefing de Misión</div>
+    <div class="brief-body">
+      Eres el nuevo jefe de seguridad del banco.<br>
+      Tu analista de datos te acaba de reportar algo grave:<br><br>
+      <b style="color:#ff3b3f;">"8 de las transacciones marcadas como legítimas en el sistema podrían ser fraudes re-etiquetados."</b><br><br>
+      Tienes una tabla de <b>50 transacciones</b> con sus features PCA (V1–V28) y el monto.<br>
+      Tu misión: identificar cuáles son los fraudes envenenados antes de que el modelo se re-entrene.
+    </div>
+    <div class="brief-rules">
+      <div class="rule-card">
+        <div class="rule-icon">⏱️</div>
+        <div class="rule-val">60 seg</div>
+        <div class="rule-text">Tiempo límite para marcar tus sospechas</div>
+      </div>
+      <div class="rule-card">
+        <div class="rule-icon">🎯</div>
+        <div class="rule-val">8 fraudes</div>
+        <div class="rule-text">Transacciones envenenadas ocultas entre las 50</div>
+      </div>
+      <div class="rule-card">
+        <div class="rule-icon">📊</div>
+        <div class="rule-val">V1–V28</div>
+        <div class="rule-text">Solo puedes ver features PCA y el monto</div>
+      </div>
+      <div class="rule-card">
+        <div class="rule-icon">🚫</div>
+        <div class="rule-val">Sin ML</div>
+        <div class="rule-text">Solo tu intuición humana — sin ayuda del modelo</div>
+      </div>
+    </div>
+    <button class="btn-primary" onclick="startGame()" style="font-size:14px;padding:14px 36px;">
+      ⚡ ACEPTAR MISIÓN
+    </button>
+  </div>
+</div>
+
+<!-- ══════════ PHASE: GAME ══════════ -->
+<div id="phase-game">
+  <div class="game-header">
+    <div>
+      <div style="font-size:10px;color:#00c2ff;letter-spacing:2px;margin-bottom:2px;">ESTADO DE MISIÓN</div>
+      <div style="font-size:13px;color:#fff;">Marca las filas que crees que son fraudes envenenados</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px;">
+      <div class="timer-wrap">
+        <div class="timer-label">TIEMPO</div>
+        <div id="timer-display" style="color:#00c46a;">60</div>
+        <div class="timer-sub">segundos</div>
+      </div>
+      <button class="btn-danger" onclick="submitAnswers()" id="submit-btn">
+        🔍 REVELAR RESPUESTA
+      </button>
+    </div>
+  </div>
+
+  <div class="game-instructions">
+    💡 Haz clic en cualquier fila para marcarla como fraude sospechoso. Haz clic de nuevo para desmarcarla.
+    Busca patrones en V1, V3, V4, V10, V12, V14, V17 — las features más correlacionadas con fraude.
+  </div>
+
+  <div class="sel-counter">
+    <div class="sel-count">Seleccionadas: <span id="sel-count-num">0</span> / 8 objetivos</div>
+    <div class="sel-hint">Selecciona exactamente 8 transacciones que crees son fraudes envenenados</div>
+    <button class="btn-secondary" onclick="clearSelections()">✕ Limpiar selección</button>
+  </div>
+
+  <div class="table-wrap">
+    <div class="scanline-fx"></div>
+    <table id="game-table">
+      <thead>
+        <tr>
+          <th style="text-align:center;">#</th>
+          <th>Etiqueta</th>
+          <th>V1</th><th>V2</th><th>V3</th><th>V4</th><th>V5</th>
+          <th>V6</th><th>V7</th><th>V8</th><th>V9</th><th>V10</th>
+          <th>V11</th><th>V12</th><th>V14</th><th>V17</th><th>V18</th>
+          <th>Monto $</th>
+        </tr>
+      </thead>
+      <tbody id="game-tbody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ══════════ PHASE: REVEAL ══════════ -->
+<div id="phase-reveal">
+  <div style="text-align:center;margin-bottom:20px;">
+    <div style="font-size:10px;color:#ffd166;letter-spacing:3px;margin-bottom:6px;">REVELACIÓN</div>
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:32px;letter-spacing:3px;color:#fff;" id="reveal-headline"></div>
+    <div style="font-size:12px;color:#a0b4cc;margin-top:6px;" id="reveal-subline"></div>
+  </div>
+
+  <div class="reveal-summary" id="reveal-summary"></div>
+
+  <div class="table-wrap">
+    <table id="reveal-table">
+      <thead>
+        <tr>
+          <th style="text-align:center;">#</th>
+          <th>Etiqueta</th>
+          <th>V1</th><th>V2</th><th>V3</th><th>V4</th><th>V5</th>
+          <th>V6</th><th>V7</th><th>V8</th><th>V9</th><th>V10</th>
+          <th>V11</th><th>V12</th><th>V14</th><th>V17</th><th>V18</th>
+          <th>Monto $</th>
+          <th>Score ML 🤖</th>
+          <th>Resultado</th>
+        </tr>
+      </thead>
+      <tbody id="reveal-tbody"></tbody>
+    </table>
+  </div>
+
+  <div class="feature-explainer">
+    <div class="feature-title">🧠 Por qué los humanos no podemos verlos — pero el modelo sí</div>
+    <div class="feature-grid">
+      <div class="feature-item">
+        <div class="feature-name">V1 &amp; V3</div>
+        <div class="feature-desc">Componentes PCA del historial del comercio. Fraudes tienen valores &lt; -4 pero a ojo no se distinguen.</div>
+      </div>
+      <div class="feature-item">
+        <div class="feature-name">V4 &amp; V11</div>
+        <div class="feature-desc">Correlacionados con patrones de tiempo y frecuencia. Fraudes: &gt; +3. ¿Lo notaste?</div>
+      </div>
+      <div class="feature-item">
+        <div class="feature-name">V12 &amp; V14</div>
+        <div class="feature-desc">Las dos features MÁS predictivas de fraude. Valores &lt; -5 son señal fuerte. El ojo humano ve solo un número.</div>
+      </div>
+      <div class="feature-item">
+        <div class="feature-name">V17</div>
+        <div class="feature-desc">Patrón de comportamiento del titular. Fraudes típicamente &lt; -4. Combinado con V14 es casi certero.</div>
+      </div>
+      <div class="feature-item">
+        <div class="feature-name">Monto</div>
+        <div class="feature-desc">Los fraudes en este dataset NO son siempre montos altos. Muchos son micro-fraudes &lt; $50 para pasar desapercibidos.</div>
+      </div>
+      <div class="feature-item">
+        <div class="feature-name">El modelo 🤖</div>
+        <div class="feature-desc">Combina las 28 dimensiones simultáneamente. Un humano puede procesar 3-4 a la vez. El modelo procesa todas en microsegundos.</div>
+      </div>
+    </div>
+  </div>
+
+  <div style="text-align:center;margin-top:18px;">
+    <button class="btn-primary" onclick="showLesson()">
+      📚 VER LECCIÓN COMPLETA →
+    </button>
+  </div>
+</div>
+
+<!-- ══════════ PHASE: LESSON ══════════ -->
+<div id="phase-lesson">
+  <div style="text-align:center;margin-bottom:24px;">
+    <div style="font-size:10px;color:#00c2ff;letter-spacing:3px;margin-bottom:8px;">LECCIÓN APRENDIDA</div>
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:3px;color:#fff;">
+      ¿POR QUÉ NECESITAMOS MODELOS DE ML?
+    </div>
+  </div>
+
+  <div class="lesson-grid">
+    <div class="lesson-card" style="border-color:#ff3b3f;">
+      <div class="lesson-card-title" style="color:#ff3b3f;">😤 El Humano</div>
+      <div class="lesson-card-body">
+        Puede procesar <b>3-4 features</b> simultáneamente.<br>
+        Se cansa, se distrae, tiene sesgos.<br>
+        Tarda <b>2-5 minutos</b> por transacción revisando manualmente.<br>
+        Un banco procesa <b>50,000 txs por hora</b>.<br>
+        Matemáticamente imposible sin automatización.
+      </div>
+    </div>
+    <div class="lesson-card" style="border-color:#00c2ff;">
+      <div class="lesson-card-title" style="color:#00c2ff;">🤖 El Modelo de ML</div>
+      <div class="lesson-card-body">
+        Procesa las <b>28 dimensiones</b> simultáneamente.<br>
+        Evalúa cada transacción en <b>microsegundos</b>.<br>
+        No se cansa, no tiene sesgos emocionales.<br>
+        Detecta patrones en <b>combinaciones</b> de features que el ojo nunca vería.<br>
+        Score de confianza calibrado con millones de ejemplos.
+      </div>
+    </div>
+    <div class="lesson-card" style="border-color:#ffd166;">
+      <div class="lesson-card-title" style="color:#ffd166;">☠️ El Data Poisoning</div>
+      <div class="lesson-card-body">
+        Si el modelo aprende que <b>V14=-6, V12=-5, V17=-4</b> es "legítimo"<br>
+        (porque el atacante envenenó esos datos),<br>
+        pierde exactamente la capacidad de ver esos patrones.<br>
+        El atacante no hackea el modelo — <b>le enseña a ser ciego</b>.
+      </div>
+    </div>
+  </div>
+
+  <div class="lesson-highlight">
+    <div class="lesson-quote">
+      "No detectamos el veneno porque los datos <i>parecen</i> normales.<br>
+      El atacante no falsificó los valores — falsificó la <b>etiqueta</b>.<br>
+      Y una etiqueta falsa es invisible para cualquier humano mirando una tabla."
+    </div>
+    <div class="lesson-author">— La razón por la que el Data Poisoning es el ataque más silencioso</div>
+  </div>
+
+  <div style="text-align:center;margin-top:20px;">
+    <button class="btn-secondary" onclick="restartGame()" id="restart-btn">
+      ↺ JUGAR DE NUEVO
+    </button>
+  </div>
+</div>
+
+<script>
+const DATA = [{"id": 0, "V1": -4.569, "V2": -0.651, "V3": -4.459, "V4": 4.86, "V5": 0.424, "V6": 0.523, "V7": -0.574, "V8": -0.024, "V9": 2.142, "V10": -2.956, "V11": 1.451, "V12": -2.342, "V14": -3.74, "V17": -5.738, "V18": 0.399, "Amount": 19.59, "DisplayLabel": 0, "Class": 1, "isPoisoned": 1, "MLScore": 0.5039}, {"id": 1, "V1": -7.669, "V2": -0.138, "V3": -6.488, "V4": 5.315, "V5": -0.851, "V6": -0.581, "V7": 0.589, "V8": 1.67, "V9": 0.395, "V10": -4.883, "V11": 6.826, "V12": -6.016, "V14": -6.131, "V17": -2.487, "V18": -0.121, "Amount": 135.28, "DisplayLabel": 0, "Class": 1, "isPoisoned": 1, "MLScore": 0.99}, {"id": 2, "V1": -4.604, "V2": -0.072, "V3": -3.898, "V4": 5.061, "V5": 0.052, "V6": 0.733, "V7": -0.081, "V8": 0.079, "V9": -1.998, "V10": -2.231, "V11": 5.043, "V12": -3.85, "V14": -8.786, "V17": -2.35, "V18": 0.613, "Amount": 3.08, "DisplayLabel": 1, "Class": 1, "isPoisoned": 0, "MLScore": 0.9208}, {"id": 3, "V1": -1.068, "V2": -0.142, "V3": 0.12, "V4": 0.514, "V5": 0.712, "V6": -1.125, "V7": -1.534, "V8": 1.278, "V9": 0.332, "V10": -0.748, "V11": 1.551, "V12": 0.116, "V14": 0.068, "V17": -0.249, "V18": 0.972, "Amount": 315.3, "DisplayLabel": 0, "Class": 0, "isPoisoned": 0, "MLScore": 0.0638}, {"id": 4, "V1": -0.603, "V2": 1.302, "V3": -5.165, "V4": 4.913, "V5": -0.753, "V6": 0.46, "V7": -0.678, "V8": 2.013, "V9": 0.137, "V10": -3.909, "V11": 3.849, "V12": -2.249, "V14": -5.484, "V17": -3.993, "V18": 1.186, "Amount": 44.12, "DisplayLabel": 0, "Class": 1, "isPoisoned": 1, "MLScore": 0.8975}, {"id": 5, "V1": -0.177, "V2": -0.798, "V3": -1.379, "V4": -0.731, "V5": -0.033, "V6": 1.795, "V7": -0.518, "V8": 0.224, "V9": -0.016, "V10": 1.188, "V11": 2.527, "V12": -0.531, "V14": 1.044, "V17": 0.584, "V18": -0.359, "Amount": 202.3, "DisplayLabel": 0, "Class": 0, "isPoisoned": 0, "MLScore": 0.1314}, {"id": 6, "V1": 1.054, "V2": -1.378, "V3": -0.938, "V4": 0.515, "V5": 0.514, "V6": 0.515, "V7": 3.853, "V8": 0.571, "V9": 1.136, "V10": 0.954, "V11": 0.651, "V12": -0.315, "V14": -0.773, "V17": 0.082, "V18": 2.315, "Amount": 45.82, "DisplayLabel": 0, "Class": 0, "isPoisoned": 0, "MLScore": 0.1049}, {"id": 7, "V1": -0.949, "V2": 2.632, "V3": 0.493, "V4": 0.185, "V5": -0.858, "V6": 0.7, "V7": -0.576, "V8": 0.122, "V9": 2.56, "V10": -0.096, "V11": 1.149, "V12": -0.703, "V14": 1.771, "V17": 0.708, "V18": -0.562, "Amount": 58.57, "DisplayLabel": 0, "Class": 0, "isPoisoned": 0, "MLScore": 0.1106}, {"id": 8, "V1": -6.901, "V2": 1.023, "V3": -5.102, "V4": 4.184, "V5": 0.564, "V6": 0.595, "V7": 0.853, "V8": 0.759, "V9": 0.281, "V10": -6.549, "V11": 4.073, "V12": -5.035, "V14": -5.395, "V17": -4.464, "V18": 0.18, "Amount": 62.61, "DisplayLabel": 0, "Class": 1, "isPoisoned": 1, "MLScore": 0.99}, {"id": 9, "V1": -1.544, "V2": -0.754, "V3": -2.685, "V4": 2.974, "V5": 0.321, "V6": 0.422, "V7": 1.614, "V8": 0.454, "V9": -0.244, "V10": -0.396, "V11": 4.776, "V12": -5.585, "V14": -11.499, "V17": -1.364, "V18": 0.126, "Amount": 2.3, "DisplayLabel": 1, "Class": 1, "isPoisoned": 0, "MLScore": 0.5991}, {"id": 10, "V1": 0.074, "V2": 1.629, "V3": -1.38, "V4": -1.703, "V5": -0.056, "V6": 0.384, "V7": -0.033, "V8": -2.067, "V9": -0.089, "V10": -1.304, "V11": 0.67, "V12": 0.367, "V14": -0.514, "V17": 0.955, "V18": -0.986, "Amount": 45.65, "DisplayLabel": 0, "Class": 0, "isPoisoned": 0, "MLScore": 0.0272}, {"id": 11, "V1": -0.718, "V2": -0.213, "V3": 0.311, "V4": 1.475, "V5": 0.858, "V6": -0.16, "V7": -0.019, "V8": -1.003, "V9": -0.019, "V10": -0.289, "V11": 0.323, "V12": -0.827, "V14": 1.533, "V17": 0.69, "V18": -0.401, "Amount": 122.55, "DisplayLabel": 0, "Class": 0, "isPoisoned": 0, "MLScore": 0.01}, {"id": 12, "V1": -3.944, "V2": -0.839, "V3": -1.647, "V4": 4.089, "V5": 2.056, "V6": -1.103, "V7": -0.221, "V8": -0.277, "V9": 0.307, "V10": 0.163, "V11": 4.235, "V12": -8.169, "V14": -4.993, "V17": -4.228, "V18": 0.735, "Amount": 57.27, "DisplayLabel": 0, "Class": 1, "isPoisoned": 1, "MLScore": 0.9544}, {"id": 13, "V1": -0.06, "V2": -3.241, "V3": -1.024, "V4": -0.253, "V5": -1.248, "V6": 1.632, "V7": -1.43, "V8": -0.44, "V9": 0.131, "V10": 1.441, "V11": -1.436, "V12": 1.163, "V14": -0.982, "V17": -0.6, "V18": 0.07, "Amount": 13.01, "DisplayLabel": 0, "Class": 0, "isPoisoned": 0, "MLScore": 0.0862}, {"id": 14, "V1": 0.497, "V2": -0.138, "V3": 0.648, "V4": 1.523, "V5": -0.234, "V6": -0.234, "V7": 1.579, "V8": 0.767, "V9": -0.469, "V10": 0.543, "V11": -0.463, "V12": -0.466, "V14": -1.913, "V17": -1.013, "V18": 0.314, "Amount": 13.45, "DisplayLabel": 0, "Class": 0, "isPoisoned": 0, "MLScore": 0.01}, {"id": 15, "V1": -0.156, "V2": 1.168, "V3": 0.254, "V4": 0.338, "V5": -0.412, "V6": -0.488, "V7": -0.433, "V8": 0.394, "V9": -0.421, "V10": 0.29, "V11": 2.075, "V12": 0.871, "V14": 1.201, "V17": -1.008, "V18": -1.871, "Amount": 184.13, "DisplayLabel": 0, "Class": 0, "isPoisoned": 0, "MLScore": 0.0889}, {"id": 16, "V1": -2.765, "V2": -0.429, "V3": -0.884, "V4": 3.131, "V5": 0.049, "V6": 0.041, "V7": -0.702, "V8": -0.663, "V9": -1.403, "V10": -6.192, "V11": 3.385, "V12": -0.357, "V14": -8.107, "V17": -2.341, "V18": 0.279, "Amount": 91.22, "DisplayLabel": 1, "Class": 1, "isPoisoned": 0, "MLScore": 0.6662}, {"id": 17, "V1": 0.183, "V2": 2.19, "V3": -0.808, "V4": -0.84, "V5": -0.599, "V6": -2.124, "V7": -0.526, "V8": -0.759, "V9": 0.15, "V10": 0.342, "V11": 1.876, "V12": 0.95, "V14": -0.898, "V17": 1.831, "V18": 1.179, "Amount": 84.29, "DisplayLabel": 0, "Class": 0, "isPoisoned": 0, "MLScore": 0.0237}, {"id": 18, "V1": 0.782, "V2": -1.237, "V3": -1.32, "V4": 0.522, "V5": 0.297, "V6": 0.25, "V7": 0.346, "V8": -0.68, "V9": 0.232, "V10": 0.293, "V11": -0.714, "V12": 1.866, "V14": -1.191, "V17": 0.787, "V18": 1.159, "Amount": 55.24, "DisplayLabel": 0, "Class": 0, "isPoisoned": 0, "MLScore": 0.0342}, {"id": 19, "V1": 0.611, "V2": 0.56, "V3": 1.081, "V4": 0.834, "V5": 0.459, "V6": -0.07, "V7": -1.661, "V8": 0.43, "V9": 0.208, "V10": 0.272, "V11": -1.277, "V12": -1.081, "V14": -0.04, "V17": 0.03, "V18": 0.938, "Amount": 17.12, "DisplayLabel": 0, "Class": 0, "isPoisoned": 0, "MLScore": 0.0346}, {"id": 20, "V1": -5.704, "V2": -0.225, "V3": -2.64, "V4": 3.073, "V5": 0.541, "V6": 0.759, "V7": -0.577, "V8": -2.591, "V9": -0.546, "V10": -1.078, "V11": 4.381, "V12": -5.878, "V14": -2.185, "V17": -5.709, "V18": -0.159, "Amount": 29.68, "DisplayLabel": 0, "Class": 1, "isPoisoned": 1, "MLScore": 0.6623}, {"id": 21, "V1": -0.817, "V2": 0.369, "V3": -0.393, "V4": 0.029, "V5": 1.278, "V6": 0.191, "V7": 0.046, "V8": -1.36, "V9": 0.746, "V10": 0.645, "V11": 2.163, "V12": -0.308, "V14": 0.249, "V17": 0.279, "V18": 0.608, "Amount": 58.31, "DisplayLabel": 0, "Class": 0, "isPoisoned": 0, "MLScore": 0.0981}, {"id": 22, "V1": 0.457, "V2": 0.57, "V3": 0.448, "V4": 0.643, "V5": 1.329, "V6": 0.197, "V7": 0.709, "V8": -0.09, "V9": 1.44, "V10": -0.676, "V11": 1.801, "V12": -0.04, "V14": 0.128, "V17": -0.653, "V18": -0.446, "Amount": 5.83, "DisplayLabel": 0, "Class": 0, "isPoisoned": 0, "MLScore": 0.0257}, {"id": 23, "V1": 1.503, "V2": 0.877, "V3": -0.221, "V4": 0.027, "V5": 0.208, "V6": -2.042, "V7": -0.247, "V8": -0.682, "V9": -1.002, "V10": -0.281, "V11": 1.798, "V12": 0.641, "V14": 0.573, "V17": 0.06, "V18": -0.647, "Amount": 447.62, "DisplayLabel": 0, "Class": 0, "isPoisoned": 0, "MLScore": 0.078}, {"id": 24, "V1": 0.046, "V2": -0.652, "V3": 2.144, "V4": 0.634, "V5": -2.025, "V6": 0.186, "V7": -0.662, "V8": 0.852, "V9": -0.793, "V10": -0.115, "V11": 0.505, "V12": 0.866, "V14": -0.335, "V17": 1.765, "V18": 0.405, "Amount": 8.24, "DisplayLabel": 0, "Class": 0, "isPoisoned": 0, "MLScore": 0.0815}, {"id": 25, "V1": -0.208, "V2": -0.493, "V3": -0.589, "V4": 0.85, "V5": 0.357, "V6": -0.693, "V7": 0.9, "V8": 0.307, "V9": 0.813, "V10": 0.63, "V11": -0.829, "V12": -0.56, "V14": 0.61, "V17": 1.278, "V18": -0.592, "Amount": 53.85, "DisplayLabel": 0, "Class": 0, "isPoisoned": 0, "MLScore": 0.01}, {"id": 26, "V1": -4.193, "V2": 1.39, "V3": -3.959, "V4": 3.804, "V5": -1.312, "V6": -1.065, "V7": -0.305, "V8": -0.61, "V9": -0.187, "V10": -3.301, "V11": 5.048, "V12": -3.291, "V14": -9.47, "V17": -8.631, "V18": -1.21, "Amount": 37.38, "DisplayLabel": 1, "Class": 1, "isPoisoned": 0, "MLScore": 0.99}, {"id": 27, "V1": -0.292, "V2": -0.602, "V3": 1.852, "V4": -0.013, "V5": -1.058, "V6": 0.823, "V7": -1.221, "V8": 0.209, "V9": -1.96, "V10": -1.328, "V11": 0.197, "V12": 0.738, "V14": -0.116, "V17": -0.72, "V18": -0.461, "Amount": 20.83, "DisplayLabel": 0, "Class": 0, "isPoisoned": 0, "MLScore": 0.0819}, {"id": 28, "V1": 0.675, "V2": -1.123, "V3": 0.382, "V4": 0.166, "V5": 0.492, "V6": 0.289, "V7": 2.455, "V8": -0.638, "V9": -0.531, "V10": -0.623, "V11": -0.555, "V12": -0.637, "V14": 1.421, "V17": 0.471, "V18": -0.552, "Amount": 675.4, "DisplayLabel": 0, "Class": 0, "isPoisoned": 0, "MLScore": 0.0131}, {"id": 29, "V1": 1.447, "V2": 0.197, "V3": 1.032, "V4": -1.486, "V5": 0.267, "V6": 0.89, "V7": 0.082, "V8": 1.065, "V9": -0.517, "V10": 1.409, "V11": 2.299, "V12": -0.363, "V14": 1.453, "V17": -0.42, "V18": -0.282, "Amount": 30.75, "DisplayLabel": 0, "Class": 0, "isPoisoned": 0, "MLScore": 0.1264}, {"id": 30, "V1": -7.045, "V2": 0.569, "V3": -4.367, "V4": 2.715, "V5": -0.204, "V6": -0.582, "V7": -1.015, "V8": -0.649, "V9": -1.224, "V10": -5.177, "V11": 5.107, "V12": -3.036, "V14": -5.282, "V17": -6.438, "V18": 1.228, "Amount": 8.33, "DisplayLabel": 1, "Class": 1, "isPoisoned": 0, "MLScore": 0.99}, {"id": 31, "V1": -0.112, "V2": -0.221, "V3": 0.614, "V4": 0.758, "V5": -0.531, "V6": -0.576, "V7": -0.275, "V8": -2.302, "V9": -1.515, "V10": 1.367, "V11": 1.645, "V12": -0.249, "V14": 0.311, "V17": -0.128, "V18": -0.956, "Amount": 37.19, "DisplayLabel": 0, "Class": 0, "isPoisoned": 0, "MLScore": 0.0889}, {"id": 32, "V1": -4.815, "V2": 0.142, "V3": -5.334, "V4": 4.444, "V5": 0.192, "V6": -0.309, "V7": 0.134, "V8": -0.152, "V9": 0.708, "V10": -5.438, "V11": 3.537, "V12": -5.016, "V14": -4.328, "V17": -4.088, "V18": 2.493, "Amount": 11.82, "DisplayLabel": 1, "Class": 1, "isPoisoned": 0, "MLScore": 0.99}, {"id": 33, "V1": 1.496, "V2": 0.654, "V3": -0.056, "V4": 0.28, "V5": -1.125, "V6": 2.446, "V7": 0.129, "V8": 0.109, "V9": 0.726, "V10": 0.481, "V11": 0.224, "V12": -0.79, "V14": 1.882, "V17": -0.511, "V18": -0.99, "Amount": 36.97, "DisplayLabel": 0, "Class": 0, "isPoisoned": 0, "MLScore": 0.0555}, {"id": 34, "V1": 0.277, "V2": 0.827, "V3": 0.013, "V4": 1.454, "V5": -0.265, "V6": 2.72, "V7": 0.626, "V8": -0.857, "V9": -1.071, "V10": 0.482, "V11": -0.223, "V12": 0.714, "V14": -0.073, "V17": -0.447, "V18": 0.856, "Amount": 168.1, "DisplayLabel": 0, "Class": 0, "isPoisoned": 0, "MLScore": 0.0472}, {"id": 35, "V1": 0.329, "V2": -0.53, "V3": 0.513, "V4": 0.097, "V5": 0.969, "V6": -0.702, "V7": -0.328, "V8": -0.392, "V9": -1.464, "V10": 0.296, "V11": 0.261, "V12": 0.005, "V14": -1.415, "V17": -0.802, "V18": -0.161, "Amount": 52.06, "DisplayLabel": 0, "Class": 0, "isPoisoned": 0, "MLScore": 0.0403}, {"id": 36, "V1": 1.566, "V2": -0.066, "V3": -0.555, "V4": 1.881, "V5": -1.448, "V6": -2.199, "V7": 0.44, "V8": -0.502, "V9": -1.021, "V10": 0.708, "V11": 0.244, "V12": -0.564, "V14": 0.872, "V17": 1.847, "V18": -1.07, "Amount": 55.37, "DisplayLabel": 0, "Class": 0, "isPoisoned": 0, "MLScore": 0.0735}, {"id": 37, "V1": -0.13, "V2": 0.097, "V3": 0.595, "V4": -0.818, "V5": 2.092, "V6": -1.006, "V7": -1.214, "V8": 1.158, "V9": 0.792, "V10": 0.624, "V11": 0.628, "V12": -0.012, "V14": 0.076, "V17": -0.147, "V18": -0.825, "Amount": 4.01, "DisplayLabel": 0, "Class": 0, "isPoisoned": 0, "MLScore": 0.067}, {"id": 38, "V1": -5.17, "V2": 1.208, "V3": -2.567, "V4": 6.062, "V5": 0.778, "V6": -0.551, "V7": -0.818, "V8": -0.003, "V9": -0.17, "V10": -1.531, "V11": 2.864, "V12": -7.015, "V14": -6.218, "V17": -7.453, "V18": -1.867, "Amount": 17.95, "DisplayLabel": 0, "Class": 1, "isPoisoned": 1, "MLScore": 0.99}, {"id": 39, "V1": 0.326, "V2": -1.251, "V3": 0.924, "V4": -0.185, "V5": -0.523, "V6": 1.049, "V7": -0.704, "V8": -1.408, "V9": -1.557, "V10": 0.606, "V11": -1.28, "V12": 1.755, "V14": 1.696, "V17": -0.545, "V18": 0.399, "Amount": 42.79, "DisplayLabel": 0, "Class": 0, "isPoisoned": 0, "MLScore": 0.0312}, {"id": 40, "V1": -0.663, "V2": 0.571, "V3": -0.763, "V4": -1.805, "V5": -1.628, "V6": 0.048, "V7": 0.26, "V8": -0.904, "V9": 0.639, "V10": -1.662, "V11": -0.066, "V12": -1.211, "V14": 0.047, "V17": 1.006, "V18": -0.577, "Amount": 37.71, "DisplayLabel": 0, "Class": 0, "isPoisoned": 0, "MLScore": 0.0602}, {"id": 41, "V1": 1.504, "V2": -2.651, "V3": 1.092, "V4": 1.246, "V5": -2.073, "V6": -0.343, "V7": -0.371, "V8": -1.408, "V9": -0.778, "V10": -1.111, "V11": 1.752, "V12": 0.936, "V14": 0.722, "V17": 0.489, "V18": -1.222, "Amount": 20.82, "DisplayLabel": 0, "Class": 0, "isPoisoned": 0, "MLScore": 0.0337}, {"id": 42, "V1": -5.845, "V2": -0.466, "V3": -7.836, "V4": 4.861, "V5": -0.533, "V6": -1.17, "V7": -2.872, "V8": -0.028, "V9": 1.772, "V10": -2.821, "V11": 3.134, "V12": -4.879, "V14": -5.468, "V17": -7.144, "V18": -0.1, "Amount": 6.46, "DisplayLabel": 1, "Class": 1, "isPoisoned": 0, "MLScore": 0.99}, {"id": 43, "V1": -0.184, "V2": 0.018, "V3": 0.348, "V4": -0.54, "V5": -0.778, "V6": 0.196, "V7": -0.978, "V8": 0.408, "V9": -1.703, "V10": 1.029, "V11": 0.473, "V12": 0.256, "V14": 1.665, "V17": -1.28, "V18": -0.625, "Amount": 160.85, "DisplayLabel": 0, "Class": 0, "isPoisoned": 0, "MLScore": 0.0488}, {"id": 44, "V1": -1.29, "V2": -1.295, "V3": -0.336, "V4": 1.669, "V5": -0.26, "V6": -1.503, "V7": -0.246, "V8": -0.273, "V9": -2.697, "V10": -0.054, "V11": -0.231, "V12": 0.696, "V14": 1.127, "V17": 2.573, "V18": 0.059, "Amount": 22.59, "DisplayLabel": 0, "Class": 0, "isPoisoned": 0, "MLScore": 0.0223}, {"id": 45, "V1": 0.331, "V2": 0.976, "V3": -0.479, "V4": -0.186, "V5": -1.106, "V6": -1.196, "V7": 0.813, "V8": 1.356, "V9": -0.072, "V10": 1.004, "V11": 0.362, "V12": -0.645, "V14": 1.538, "V17": -2.62, "V18": 0.822, "Amount": 130.73, "DisplayLabel": 0, "Class": 0, "isPoisoned": 0, "MLScore": 0.0852}, {"id": 46, "V1": -0.035, "V2": -1.169, "V3": 1.143, "V4": 0.752, "V5": 0.791, "V6": -0.909, "V7": 1.403, "V8": -1.402, "V9": 0.587, "V10": 2.19, "V11": -0.991, "V12": -0.566, "V14": -0.503, "V17": -1.062, "V18": 0.474, "Amount": 48.9, "DisplayLabel": 0, "Class": 0, "isPoisoned": 0, "MLScore": 0.0241}, {"id": 47, "V1": -0.861, "V2": 1.523, "V3": 0.539, "V4": -1.037, "V5": -0.19, "V6": -0.876, "V7": -1.383, "V8": 0.926, "V9": 1.909, "V10": -1.399, "V11": 0.563, "V12": -0.651, "V14": -0.592, "V17": -0.831, "V18": 0.27, "Amount": 74.82, "DisplayLabel": 0, "Class": 0, "isPoisoned": 0, "MLScore": 0.0609}, {"id": 48, "V1": 0.338, "V2": -0.415, "V3": 0.633, "V4": 2.271, "V5": 0.182, "V6": 0.248, "V7": -0.459, "V8": -0.85, "V9": 0.83, "V10": -0.856, "V11": 0.072, "V12": -0.478, "V14": 0.334, "V17": -0.27, "V18": -0.979, "Amount": 2.3, "DisplayLabel": 0, "Class": 0, "isPoisoned": 0, "MLScore": 0.0319}, {"id": 49, "V1": -5.128, "V2": 0.261, "V3": -4.724, "V4": 3.414, "V5": -0.026, "V6": 1.173, "V7": 0.544, "V8": -0.371, "V9": 0.772, "V10": -0.677, "V11": 3.997, "V12": -4.226, "V14": -4.439, "V17": -4.442, "V18": 0.347, "Amount": 8.93, "DisplayLabel": 0, "Class": 1, "isPoisoned": 1, "MLScore": 0.99}];
+const POISONED_IDS = [0, 1, 4, 8, 12, 20, 38, 49];
+const N_POISONED = 8;
+
+let selectedRows = new Set();
+let timerInterval = null;
+let timeLeft = 60;
+let gameActive = false;
+
+function showPhase(name) {
+  ['phase-brief','phase-game','phase-reveal','phase-lesson'].forEach(id => {
+    document.getElementById(id).style.display = 'none';
+  });
+  document.getElementById('phase-' + name).style.display = 'block';
+}
+
+// ── BRIEF ───────────────────────────────────────────────────────
+function startGame() {
+  showPhase('game');
+  buildGameTable();
+  startTimer();
+  gameActive = true;
+}
+
+// ── TIMER ────────────────────────────────────────────────────────
+function startTimer() {
+  timeLeft = 60;
+  updateTimerDisplay();
+  timerInterval = setInterval(() => {
+    timeLeft--;
+    updateTimerDisplay();
+    if (timeLeft <= 0) {
+      clearInterval(timerInterval);
+      if (gameActive) {
+        gameActive = false;
+        submitAnswers();
+      }
+    }
+  }, 1000);
+}
+
+function updateTimerDisplay() {
+  const el = document.getElementById('timer-display');
+  el.textContent = timeLeft;
+  if (timeLeft > 30) el.style.color = '#00c46a';
+  else if (timeLeft > 10) el.style.color = '#ffd166';
+  else {
+    el.style.color = '#ff3b3f';
+    el.style.animation = 'timerPulse 0.5s infinite';
+  }
+}
+
+// ── BUILD TABLE ────────────────────────────────────────────────
+function buildGameTable() {
+  const tbody = document.getElementById('game-tbody');
+  tbody.innerHTML = '';
+  DATA.forEach((row, idx) => {
+    const tr = document.createElement('tr');
+    tr.id = 'game-row-' + row.id;
+    tr.onclick = () => toggleRow(row.id, tr);
+
+    const labelBadge = row.DisplayLabel === 0
+      ? '<span class="badge-label badge-legit">LEGÍTIMA</span>'
+      : '<span class="badge-label badge-fraud">FRAUDE</span>';
+
+    tr.innerHTML = `
+      <td style="color:#4a6a9a;">${String(idx+1).padStart(2,'0')}</td>
+      <td>${labelBadge}</td>
+      <td>${colorVal(row.V1, -3, 3)}</td>
+      <td>${row.V2}</td>
+      <td>${colorVal(row.V3, -3, 3)}</td>
+      <td>${colorVal(row.V4, 3, -3, true)}</td>
+      <td>${row.V5}</td>
+      <td>${row.V6}</td>
+      <td>${row.V7}</td>
+      <td>${row.V8}</td>
+      <td>${row.V9}</td>
+      <td>${colorVal(row.V10, -3, 3)}</td>
+      <td>${colorVal(row.V11, 3, -3, true)}</td>
+      <td>${colorVal(row.V12, -3, 3)}</td>
+      <td>${colorVal(row.V14, -4, 3)}</td>
+      <td>${colorVal(row.V17, -3, 3)}</td>
+      <td>${row.V18}</td>
+      <td style="color:#a0b4cc;">${row.Amount.toFixed(2)}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function colorVal(val, threshold, highThreshold, invertHigh=false) {
+  let color = '#c8d8e8';
+  if (!invertHigh && val < threshold) color = '#ff8c42';
+  if (invertHigh && val > threshold) color = '#ff8c42';
+  return `<span style="color:${color};">${val}</span>`;
+}
+
+function toggleRow(id, tr) {
+  if (!gameActive) return;
+  if (selectedRows.has(id)) {
+    selectedRows.delete(id);
+    tr.classList.remove('selected-fraud');
+  } else {
+    selectedRows.add(id);
+    tr.classList.add('selected-fraud');
+  }
+  document.getElementById('sel-count-num').textContent = selectedRows.size;
+}
+
+function clearSelections() {
+  selectedRows.clear();
+  document.querySelectorAll('#game-tbody tr').forEach(tr => tr.classList.remove('selected-fraud'));
+  document.getElementById('sel-count-num').textContent = '0';
+}
+
+// ── SUBMIT ────────────────────────────────────────────────────────
+function submitAnswers() {
+  clearInterval(timerInterval);
+  gameActive = false;
+
+  // Calculate results
+  const userSelected = new Set(selectedRows);
+  const poisonedSet  = new Set(POISONED_IDS);
+
+  let correct = 0, missed = 0, falsePositive = 0;
+  poisonedSet.forEach(id => {
+    if (userSelected.has(id)) correct++; else missed++;
+  });
+  userSelected.forEach(id => {
+    if (!poisonedSet.has(id)) falsePositive++;
+  });
+
+  const pct = Math.round((correct / N_POISONED) * 100);
+
+  // Build reveal
+  showPhase('reveal');
+
+  // Headline
+  let headline, subline;
+  if (correct === N_POISONED && falsePositive === 0) {
+    headline = '🏆 INCREÍBLE — PERFECTO';
+    subline = 'Eres el 0.1% de personas que puede hacer esto. En serio.';
+  } else if (correct >= Math.ceil(N_POISONED * 0.6)) {
+    headline = '😮 BUEN INTENTO';
+    subline = `Detectaste ${correct} de ${N_POISONED}. Mejor que el promedio — pero el modelo detecta los ${N_POISONED} de ${N_POISONED}.`;
+  } else if (correct > 0) {
+    headline = '😅 CASI... PERO NO';
+    subline = `Solo ${correct} de ${N_POISONED} detectados. El atacante habría escapado con ${missed} fraudes.`;
+  } else {
+    headline = '💀 EL ATACANTE GANÓ';
+    subline = `No detectaste ninguno. Exactamente lo que el atacante esperaba. El modelo detecta los ${N_POISONED}.`;
+  }
+
+  document.getElementById('reveal-headline').textContent = headline;
+  document.getElementById('reveal-subline').textContent = subline;
+
+  // Summary cards
+  const summaryData = [
+    { val: correct, color: '#00c46a', label: 'Fraudes\ndetectados\npor ti', icon: '✅' },
+    { val: missed,  color: '#ff3b3f', label: 'Fraudes\nque escaparon\nsin detección', icon: '💀' },
+    { val: falsePositive, color: '#ff8c42', label: 'Legítimas\nmarcadas\nerróneamente', icon: '⚠️' },
+    { val: N_POISONED, color: '#00c2ff', label: 'Fraudes\ndetectados\npor el modelo 🤖', icon: '🤖' },
+  ];
+  const summaryEl = document.getElementById('reveal-summary');
+  summaryEl.innerHTML = summaryData.map(s => `
+    <div class="reveal-card" style="border-color:${s.color}44;">
+      <div style="font-size:24px;margin-bottom:6px;">${s.icon}</div>
+      <div class="reveal-val" style="color:${s.color};">${s.val}</div>
+      <div class="reveal-lbl" style="white-space:pre-line;">${s.label}</div>
+    </div>
+  `).join('');
+
+  // Build reveal table with ML scores
+  const tbody = document.getElementById('reveal-tbody');
+  tbody.innerHTML = '';
+  DATA.forEach((row, idx) => {
+    const tr = document.createElement('tr');
+    const isPoisoned = poisonedSet.has(row.id);
+    const userSelected_this = userSelected.has(row.id);
+
+    let rowClass = '', resultBadge = '', resultColor = '#4a6a9a';
+
+    if (isPoisoned && userSelected_this) {
+      rowClass = 'reveal-correct'; resultBadge = '✅ Detectado'; resultColor = '#00c46a';
+    } else if (isPoisoned && !userSelected_this) {
+      rowClass = 'reveal-missed'; resultBadge = '💀 Escapó'; resultColor = '#ff3b3f';
+    } else if (!isPoisoned && userSelected_this) {
+      rowClass = 'reveal-fp'; resultBadge = '⚠️ Falso positivo'; resultColor = '#ff8c42';
+    } else {
+      rowClass = 'reveal-legit'; resultBadge = ''; resultColor = '#4a6a9a';
+    }
+    tr.className = rowClass;
+
+    // Label badge
+    let labelBadge;
+    if (isPoisoned) {
+      labelBadge = '<span class="badge-label badge-poison">☠️ VENENO</span>';
+    } else if (row.Class === 1) {
+      labelBadge = '<span class="badge-label badge-fraud">FRAUDE</span>';
+    } else {
+      labelBadge = '<span class="badge-label badge-legit">LEGÍTIMA</span>';
+    }
+
+    // ML score bar
+    const score = row.MLScore;
+    const barColor = score > 0.5 ? '#ff3b3f' : score > 0.2 ? '#ffd166' : '#00c46a';
+    const barWidth = Math.round(score * 60);
+    const mlBar = `<div class="ml-bar-wrap">
+      <div class="ml-bar" style="width:${barWidth}px;background:${barColor};"></div>
+      <span class="ml-val" style="color:${barColor};">${(score*100).toFixed(1)}%</span>
+    </div>`;
+
+    tr.innerHTML = `
+      <td style="color:#4a6a9a;">${String(idx+1).padStart(2,'0')}</td>
+      <td>${labelBadge}</td>
+      <td>${row.V1}</td><td>${row.V2}</td><td>${row.V3}</td><td>${row.V4}</td><td>${row.V5}</td>
+      <td>${row.V6}</td><td>${row.V7}</td><td>${row.V8}</td><td>${row.V9}</td><td>${row.V10}</td>
+      <td>${row.V11}</td><td>${row.V12}</td><td>${row.V14}</td><td>${row.V17}</td><td>${row.V18}</td>
+      <td style="color:#a0b4cc;">${row.Amount.toFixed(2)}</td>
+      <td>${mlBar}</td>
+      <td style="color:${resultColor};font-size:10px;font-weight:700;white-space:nowrap;">${resultBadge}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function showLesson() {
+  showPhase('lesson');
+}
+
+function restartGame() {
+  selectedRows.clear();
+  showPhase('brief');
+}
+
+// ── INIT ──────────────────────────────────────────────────────────
+showPhase('brief');
+</script>
+</body>
+</html>
