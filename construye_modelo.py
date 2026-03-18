@@ -13,9 +13,7 @@ st.set_page_config(
 )
 
 DEEPSEEK_API_KEY = "sk-23261b5ee48143d38288c5a86ebb156f"
-DATASET_LINK = (
-    "https://drive.google.com/uc?export=download&id=1Q0521PVFO5ZTJ8LOhLTchAwMHbXsfMRu"
-)
+DATASET_LINK = "https://raw.githubusercontent.com/juanmiguelsuero/fraudguard-ai/main/creditcard_mini.csv"  # 50k filas, ~25MB
 LOGO_URL = "https://hackconrd.org/uploads/2024/12/logo1200x600-1-768x175.png"
 HACKCON_URL = "https://hackconrd.org"
 
@@ -95,10 +93,10 @@ st.markdown(
      color:#fff;font-weight:700;font-size:15px;padding:14px 36px;border-radius:12px;
      text-decoration:none;box-shadow:0 4px 20px #00c46a44;letter-spacing:.5px;'
      target="_blank">
-    ⬇️ &nbsp; Paso 0 — Descarga el Dataset (creditcard.csv · 144MB)
+    ⬇️ &nbsp; Paso 0 — Descarga el Dataset (creditcard_mini.csv · 25MB · 50,000 filas)
   </a>
   <p style='color:#4a8a5a;font-size:13px;margin-top:10px;'>
-    284,807 transacciones reales · 492 fraudes · Gratis</p>
+    50,000 transacciones reales · 492 fraudes · Gratis</p>
 </div>
 <div style='display:flex;justify-content:center;gap:10px;margin:0 0 28px;flex-wrap:wrap;'>
   <span style='background:#0d2248;border:1px solid #1e3a7a;border-radius:20px;
@@ -159,11 +157,11 @@ Abre la terminal (cmd en Windows, Terminal en Mac/Linux) y pega este comando:</p
 <p style='color:#fff;font-weight:600;margin-bottom:4px;'>Descarga el dataset</p>
 <p style='color:#a0b4cc;margin-bottom:10px;'>
 Guárdalo en la misma carpeta donde estará tu archivo <b style='color:#fff;'>fraude.py</b>.</p>
-<a href='https://drive.google.com/uc?export=download&id=1Q0521PVFO5ZTJ8LOhLTchAwMHbXsfMRu' target='_blank'
+<a href='https://raw.githubusercontent.com/juanmiguelsuero/fraudguard-ai/main/creditcard_mini.csv' target='_blank'
    style='display:inline-block;background:linear-gradient(135deg,#00c46a,#00a855);
    color:#fff;font-weight:700;font-size:13px;padding:10px 22px;border-radius:10px;
    text-decoration:none;margin-bottom:16px;'>
-   ⬇️ Descargar creditcard.csv (144MB)
+   ⬇️ Descargar creditcard.csv (25MB)
 </a>
 
 <div class='step-badge'>Paso 4</div>
@@ -206,12 +204,12 @@ pandas, numpy y scikit-learn ya vienen instalados en Colab.</p>
 <p style='color:#fff;font-weight:600;margin-bottom:4px;'>Descarga y sube el dataset</p>
 <p style='color:#a0b4cc;margin-bottom:10px;'>
 Primero descárgalo a tu computadora:</p>
-<a href='https://drive.google.com/uc?export=download&id=1Q0521PVFO5ZTJ8LOhLTchAwMHbXsfMRu'
+<a href='https://raw.githubusercontent.com/juanmiguelsuero/fraudguard-ai/main/creditcard_mini.csv'
    target='_blank'
    style='display:inline-block;background:linear-gradient(135deg,#00c46a,#00a855);
    color:#fff;font-weight:700;font-size:13px;padding:10px 22px;border-radius:10px;
    text-decoration:none;margin-bottom:12px;'>
-   ⬇️ Descargar creditcard.csv (144MB)
+   ⬇️ Descargar creditcard.csv (25MB)
 </a>
 <p style='color:#a0b4cc;margin-bottom:12px;'>
 Luego en Colab: panel izquierdo → ícono 📁 → ⬆️ → selecciona el archivo.</p>
@@ -302,49 +300,47 @@ sintéticos se mezclan con el test y tus métricas serán falsas.
     )
 
     st.code(
-        r"""
-# ══════════════════════════════════════════════════
-# DETECTOR DE FRAUDE — version rapida (~20 segundos)
-# Requisito: creditcard.csv en la misma carpeta
+        r"""# ══════════════════════════════════════════════════
+# DETECTOR DE FRAUDE — dataset completo
+# Requisito: creditcard_mini.csv en la misma carpeta
 # pip install pandas scikit-learn imbalanced-learn xgboost
 # ══════════════════════════════════════════════════
 import pandas as pd
 import numpy as np
 import warnings
-warnings.filterwarnings('ignore')
+import os
 
-from sklearn.model_selection  import train_test_split
-from sklearn.preprocessing    import StandardScaler
-from sklearn.metrics          import roc_auc_score, confusion_matrix
-from sklearn.ensemble         import RandomForestClassifier
-from sklearn.linear_model     import LogisticRegression
-from imblearn.over_sampling   import SMOTE
+warnings.filterwarnings("ignore")
+
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import roc_auc_score, confusion_matrix
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import LogisticRegression
+from imblearn.over_sampling import SMOTE
 import xgboost as xgb
 
-# ── 1. Cargar dataset ─────────────────────────────
-df = pd.read_csv('creditcard.csv')
+# ── 1. Cargar dataset completo ────────────────────
+csv = "creditcard_mini.csv" if os.path.exists("creditcard_mini.csv") else "creditcard.csv"
+df = pd.read_csv(csv)
 total_real   = len(df)
-fraudes_real = int(df['Class'].sum())
+fraudes_real = int(df["Class"].sum())
+ratio        = int((df["Class"] == 0).sum() // fraudes_real)
 print("=" * 55)
 print("  DETECTOR DE FRAUDE — FraudGuard AI")
 print("=" * 55)
 print(f"  Dataset:  {total_real:,} transacciones cargadas")
 print(f"  Fraudes:  {fraudes_real} ({fraudes_real/total_real*100:.2f}% del total)")
-print(f"  Es decir: de cada 578 compras, solo 1 es fraude.")
+print(f"  Es decir: de cada {ratio} compras, solo 1 es fraude.")
+print(f"  Usando TODAS las {total_real:,} filas para entrenar.")
 print("=" * 55)
-
-legitimas = df[df['Class']==0].sample(10_000, random_state=42)
-fraudes   = df[df['Class']==1]
-df = pd.concat([legitimas, fraudes]).sample(frac=1, random_state=42)
-print(f"\n  Usando {len(df):,} filas para entrenar rapido.")
-print(f"  (En produccion se entrena con el dataset completo)\n")
 
 # ── 2. Escalar y preparar ─────────────────────────
 scaler = StandardScaler()
-df['Amount'] = scaler.fit_transform(df[['Amount']])
-df['Time']   = scaler.fit_transform(df[['Time']])
-X = df.drop('Class', axis=1)
-y = df['Class']
+df["Amount"] = scaler.fit_transform(df[["Amount"]])
+df["Time"]   = scaler.fit_transform(df[["Time"]])
+X = df.drop("Class", axis=1)
+y = df["Class"]
 
 X_train, X_test, y_train, y_test = train_test_split(
     X, y, test_size=0.2, stratify=y, random_state=42)
@@ -359,17 +355,17 @@ print(f"        Resultado: {n:,} ejemplos de cada clase para entrenar")
 modelos = {
     "Random Forest": RandomForestClassifier(n_estimators=20, random_state=42, n_jobs=-1),
     "XGBoost":       xgb.XGBClassifier(n_estimators=50, scale_pos_weight=20,
-                                        eval_metric='logloss', random_state=42, verbosity=0),
-    "Logistica":     LogisticRegression(class_weight='balanced', max_iter=1000),
+                                        eval_metric="logloss", random_state=42, verbosity=0),
+    "Logistica":     LogisticRegression(class_weight="balanced", max_iter=1000),
 }
 for i, (nombre, modelo) in enumerate(modelos.items(), 3):
     print(f"  [{i}/5] Entrenando {nombre} ...")
     modelo.fit(X_train, y_train)
 
 # ── 4. Resultados en lenguaje simple ──────────────
-UMBRAL      = 0.3
-total_test  = int((y_test == 1).sum())
-total_leg   = int((y_test == 0).sum())
+UMBRAL     = 0.3
+total_test = int((y_test == 1).sum())
+total_leg  = int((y_test == 0).sum())
 
 print(f"\n{'=' * 55}")
 print(f"  RESULTADOS DEL TEST")
@@ -386,7 +382,6 @@ for nombre, modelo in modelos.items():
     tn, fp, fn, tp = confusion_matrix(y_test, pred).ravel()
     resultados[nombre] = {"tp": int(tp), "fn": int(fn), "fp": int(fp), "tn": int(tn), "auc": auc}
 
-    pct = int(tp) / total_test * 100
     leg_ok  = int(tn)
     leg_err = int(fp)
     print(f"  [{nombre}]")
@@ -405,9 +400,9 @@ print(f"  CUAL MODELO ELEGIR?")
 print(f"{'=' * 55}")
 
 for nombre, r in resultados.items():
-    pct     = r['tp'] / total_test * 100
-    pct_leg = r['tn'] / total_leg * 100
-    perdida = r['fn'] * 122
+    pct     = r["tp"] / total_test * 100
+    pct_leg = r["tn"] / total_leg * 100
+    perdida = r["fn"] * 122
     print(f"  {nombre}")
     print(f"    Fraudes detectados:              {r['tp']} de {total_test} ({pct:.0f}%)")
     print(f"    Legitimas aprobadas correctamente: {r['tn']:,} de {total_leg:,} ({pct_leg:.1f}%)")
@@ -415,18 +410,11 @@ for nombre, r in resultados.items():
     print(f"    Clientes bloqueados por error:   {r['fp']}")
     print()
 
-mejor_recall = max(resultados, key=lambda x: resultados[x]['tp'])
-menor_fp     = min(resultados, key=lambda x: resultados[x]['fp'])
+mejor_recall = max(resultados, key=lambda x: resultados[x]["tp"])
+menor_fp     = min(resultados, key=lambda x: resultados[x]["fp"])
 print(f"  Detecta mas fraudes     -> {mejor_recall}")
 print(f"  Menos errores con clientes buenos -> {menor_fp}")
-print(f"")
-print(f"  NOTA IMPORTANTE:")
-print(f"  Logistica detecta mas fraudes pero bloquea muchas tarjetas buenas.")
-print(f"  Eso pasa porque este script usa pocos datos de entrenamiento.")
-print(f"  Con el dataset completo (284k filas) Random Forest y XGBoost")
-print(f"  mejoran mucho — son los modelos que usa FraudGuard en produccion.")
 print(f"{'=' * 55}")
-
 """,
         language="python",
     )
@@ -502,13 +490,13 @@ Edítalo y observa cómo cambia el comportamiento de FraudBot</p>
                 )
             except Exception:
                 _ctx = (
-                    "- 284,807 transacciones · 492 fraudes (0.17%) · Ratio 578:1\n"
+                    "- 50,000 transacciones · 492 fraudes (0.17%) · Ratio 578:1\n"
                     "- Monto promedio fraude: $122  |  legítima: $88\n"
                     "- Columnas: Time, V1-V28 (PCA anonimizados), Amount, Class"
                 )
         else:
             _ctx = (
-                "- 284,807 transacciones · 492 fraudes (0.17%) · Ratio 578:1\n"
+                "- 50,000 transacciones · 492 fraudes (0.17%) · Ratio 578:1\n"
                 "- Monto promedio fraude: $122  |  legítima: $88\n"
                 "- Columnas: Time, V1-V28 (PCA anonimizados), Amount, Class"
             )
@@ -803,7 +791,7 @@ for col, (icon, color, title, link, desc) in zip(
             "#00c2ff",
             "Dataset",
             "Botón verde de descarga ⬆️",
-            "creditcard.csv · 284,807 transacciones · 144MB",
+            "creditcard.csv · 50,000 transacciones · 25MB",
         ),
         (
             "🔑",
