@@ -688,9 +688,8 @@ padding:10px 14px;margin:8px 0;font-size:13px;'>
         )
 
         st.code(
-            '''# =====================================================
+            """# =====================================================
 # FRAUDBOT - Mini-RAG con DeepSeek
-# El bot recibe una muestra REAL del dataset
 # pip install openai pandas
 # Necesitas: creditcard_mini.csv + API Key de DeepSeek
 # =====================================================
@@ -707,16 +706,16 @@ client = OpenAI(
 csv = "creditcard_mini.csv" if os.path.exists("creditcard_mini.csv") else "creditcard.csv"
 df  = pd.read_csv(csv)
 
-total     = len(df)
-fraudes   = int(df["Class"].sum())
-pct       = round(df["Class"].mean() * 100, 2)
-ratio     = int((df["Class"] == 0).sum() // fraudes)
-amt_fraud = round(df[df["Class"] == 1]["Amount"].mean(), 2)
-amt_leg   = round(df[df["Class"] == 0]["Amount"].mean(), 2)
+total      = len(df)
+fraudes    = int(df["Class"].sum())
+pct        = round(df["Class"].mean() * 100, 2)
+ratio      = int((df["Class"] == 0).sum() // fraudes)
+amt_fraud  = round(df[df["Class"] == 1]["Amount"].mean(), 2)
+amt_leg    = round(df[df["Class"] == 0]["Amount"].mean(), 2)
 fraude_max = round(df[df["Class"] == 1]["Amount"].max(), 2)
 fraude_min = round(df[df["Class"] == 1]["Amount"].min(), 2)
 
-# -- Calcular distribucion por hora -----------------------
+# -- Distribucion por hora --------------------------------
 df["hora"] = (df["Time"] / 3600 % 24).astype(int)
 fraudes_por_hora = (
     df[df["Class"] == 1]
@@ -726,61 +725,56 @@ fraudes_por_hora = (
 hora_pico = int(fraudes_por_hora.idxmax())
 pico_cant = int(fraudes_por_hora.max())
 
-# -- Muestra REAL del dataset (50 fraudes + 150 legitimas)
-# Seleccionamos columnas mas relevantes para no exceder tokens
-cols_importantes = ["Time", "V1", "V4", "V10", "V12", "V14", "V17", "Amount", "Class"]
-muestra = pd.concat([
-    df[df["Class"] == 1][cols_importantes].head(50),   # 50 fraudes reales
-    df[df["Class"] == 0][cols_importantes].head(150),  # 150 legitimas reales
-]).sample(frac=1, random_state=42).reset_index(drop=True)
+# Construir string de distribucion horaria
+lineas_horas = []
+for h in range(24):
+    cant = int(fraudes_por_hora[h])
+    lineas_horas.append("  %02d:00h -> %d fraudes" % (h, cant))
+dist_horas = "\n".join(lineas_horas)
 
+# -- Muestra real del dataset -----------------------------
+cols = ["Time", "V1", "V4", "V10", "V12", "V14", "V17", "Amount", "Class"]
+muestra = pd.concat([
+    df[df["Class"] == 1][cols].head(50),
+    df[df["Class"] == 0][cols].head(150),
+]).sample(frac=1, random_state=42).reset_index(drop=True)
 muestra["hora"] = (muestra["Time"] / 3600 % 24).round(1)
 muestra = muestra.drop(columns=["Time"])
 muestra_txt = muestra.round(3).to_string(index=True)
 
 print("=" * 55)
 print("  FRAUDBOT - Mini-RAG con DeepSeek")
-print("  (con muestra real del dataset)")
 print("=" * 55)
-print(f"  Dataset: {total:,} filas | {fraudes} fraudes ({pct}%)")
-print(f"  Enviando 200 filas reales a DeepSeek...")
-print(f"  Hora pico de fraude: {hora_pico:02d}:00h ({pico_cant} fraudes)")
+print("  Dataset: %s | %d fraudes (%.2f%%)" % (csv, fraudes, pct))
+print("  Hora pico de fraude: %02d:00h (%d fraudes)" % (hora_pico, pico_cant))
+print("  Enviando 200 filas reales a DeepSeek...")
 print("=" * 55)
 
-# -- System prompt con muestra REAL -----------------------
-# Construir distribucion horaria como string separado
-dist_horas = "\n".join([f"  {h:02d}:00h -> {int(fraudes_por_hora[h])} fraudes" for h in range(24)])
+# -- System prompt ----------------------------------------
+SYSTEM_PROMPT = (
+    "Eres FraudBot, analista de fraude de un banco dominicano.\n"
+    "Tienes acceso a una muestra REAL del dataset. No inventes numeros.\n\n"
+    "ESTADISTICAS DEL DATASET (%s):\n" % csv +
+    "- %s transacciones | %d fraudes (%.2f%%)\n" % (format(total, ","), fraudes, pct) +
+    "- Ratio: %d:1 (legitimas vs fraudes)\n" % ratio +
+    "- Monto promedio fraude: $%.2f | legitima: $%.2f\n" % (amt_fraud, amt_leg) +
+    "- Fraude maximo: $%.2f | minimo: $%.2f\n" % (fraude_max, fraude_min) +
+    "- Hora pico de fraude: %02d:00h (%d fraudes)\n\n" % (hora_pico, pico_cant) +
+    "DISTRIBUCION POR HORA (los %d fraudes):\n" % fraudes +
+    dist_horas + "\n\n" +
+    "MUESTRA REAL DE 200 FILAS (50 fraudes + 150 legitimas):\n"
+    "Columnas: hora, V1,V4,V10,V12,V14,V17(patrones PCA), Amount, Class\n"
+    "NOTA: V14 y V17 muy negativos = senal fuerte de fraude.\n\n" +
+    muestra_txt + "\n\n"
+    "Responde en espanol con los datos reales. Max 4 parrafos."
+)
 
-SYSTEM_PROMPT = f"""
-Eres FraudBot, analista de fraude de un banco dominicano.
-Tienes acceso a una muestra REAL del dataset de transacciones.
-Responde SIEMPRE basandote en los datos que ves — no inventes.
-
-ESTADISTICAS GENERALES DEL DATASET COMPLETO ({csv}):
-- {total:,} transacciones totales | {fraudes} fraudes ({pct}%)
-- Ratio: {ratio}:1 (legitimas vs fraudes)
-- Monto promedio fraude: ${amt_fraud} | legitima: ${amt_leg}
-- Fraude maximo: ${fraude_max} | minimo: ${fraude_min}
-- Hora pico de fraude: {hora_pico:02d}:00h ({pico_cant} fraudes en esa hora)
-
-DISTRIBUCION POR HORA (fraudes del dataset completo):
-{dist_horas}
-
-MUESTRA REAL DE 200 FILAS (50 fraudes + 150 legitimas):
-Columnas: hora(del dia), V1,V4,V10,V12,V14,V17(patrones PCA), Amount(monto), Class(0=legitima,1=fraude)
-NOTA: V14 y V17 muy negativos son señal fuerte de fraude.
-
-{muestra_txt}
-
-Responde en espanol. Usa los datos reales de la muestra.
-Cuando cites un patron di en que fila lo ves. Max 4 parrafos.
-"""
-
+# -- Chat -------------------------------------------------
 historial = []
 
 def preguntar(pregunta):
-    print(f"\n  Pregunta: {pregunta}")
-    print(f"  {'─' * 51}")
+    print("\n  Pregunta: " + pregunta)
+    print("  " + "-" * 51)
     historial.append({"role": "user", "content": pregunta})
     r = client.chat.completions.create(
         model       = "deepseek-chat",
@@ -790,39 +784,39 @@ def preguntar(pregunta):
     )
     respuesta = r.choices[0].message.content
     historial.append({"role": "assistant", "content": respuesta})
-    print(f"  FraudBot: {respuesta}\n")
+    print("  FraudBot: " + respuesta + "\n")
     return respuesta
 
 print("\n  Iniciando preguntas...\n")
 
-# 1. Horario con mas fraudes — el bot ve los datos reales
+# 1. Horario con mas fraudes
 preguntar(
-    "Mirando la muestra del dataset, en que horarios ocurren mas fraudes? "
-    "Dame los rangos de hora con mas actividad fraudulenta y cuantos hay en cada uno."
+    "En que horarios del dia ocurren mas fraudes segun el dataset? "
+    "Dame los rangos de hora con mas actividad fraudulenta "
+    "y cuantos fraudes hay en cada uno."
 )
 
-# 2. Patron de montos — el bot analiza Amount vs Class
+# 2. Patron de montos
 preguntar(
-    f"Analiza los montos de las transacciones fraudulentas vs legitimas en la muestra. "
-    f"El fraude promedio es ${amt_fraud} pero hay desde ${fraude_min} hasta ${fraude_max}. "
-    f"Que patron ves en los montos de los fraudes?"
+    "Analiza los montos de los fraudes vs transacciones legitimas. "
+    "El fraude promedio es $%.2f pero hay desde $%.2f hasta $%.2f. "
+    "Que patron ves y por que los fraudsters no siempre roban lo maximo?" 
+    % (amt_fraud, fraude_min, fraude_max)
 )
 
-# 3. Impacto real en dinero — entendible para cualquier persona
+# 3. Impacto en dinero real
 preguntar(
-    f"Con {fraudes} fraudes en el dataset y un monto promedio de ${amt_fraud} cada uno, "
-    f"cuanto dinero perderia un banco dominicano en un mes si su modelo "
-    f"no detecta el 16% de los fraudes? "
-    f"Explica el impacto en terminos simples para que lo entienda alguien "
-    f"que no sabe de tecnologia."
+    "Si el modelo no detecta el 16%% de los %d fraudes del dataset "
+    "y el monto promedio es $%.2f, cuanto dinero pierde el banco? "
+    "Explica el impacto en terminos simples para alguien que no sabe de tecnologia."
+    % (fraudes, amt_fraud)
 )
 
 print("=" * 55)
-print("  Fin. El bot respondio basandose en datos reales.")
-print("  Agrega mas preguntar() para seguir explorando.")
+print("  Fin. Agrega mas preguntar() para seguir explorando.")
 print("=" * 55)
 
-''',
+""",
             language="python",
         )
 
