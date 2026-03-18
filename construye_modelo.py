@@ -690,96 +690,135 @@ padding:10px 14px;margin:8px 0;font-size:13px;'>
         st.code(
             '''# =====================================================
 # FRAUDBOT - Mini-RAG con DeepSeek
+# El bot recibe una muestra REAL del dataset
 # pip install openai pandas
-# Necesitas: creditcard.csv + API Key de DeepSeek
-#   -> platform.deepseek.com -> API Keys -> Create (gratis)
+# Necesitas: creditcard_mini.csv + API Key de DeepSeek
 # =====================================================
 import pandas as pd
+import os
 from openai import OpenAI
 
-# -- Conectar a DeepSeek ----------------------------------
 client = OpenAI(
-    api_key="sk-23261b5ee48143d38288c5a86ebb156f",  # key para la charla HackConRD
-    base_url="https://api.deepseek.com"
+    api_key="sk-23261b5ee48143d38288c5a86ebb156f",
+    base_url="https://api.deepseek.com",
 )
 
-# -- Cargar el dataset y calcular stats reales ------------
-df        = pd.read_csv("creditcard.csv")
+# -- Cargar dataset ---------------------------------------
+csv = "creditcard_mini.csv" if os.path.exists("creditcard_mini.csv") else "creditcard.csv"
+df  = pd.read_csv(csv)
+
 total     = len(df)
 fraudes   = int(df["Class"].sum())
 pct       = round(df["Class"].mean() * 100, 2)
-ratio     = int((df["Class"]==0).sum() // fraudes)
-amt_fraud = round(df[df["Class"]==1]["Amount"].mean(), 2)
-amt_leg   = round(df[df["Class"]==0]["Amount"].mean(), 2)
+ratio     = int((df["Class"] == 0).sum() // fraudes)
+amt_fraud = round(df[df["Class"] == 1]["Amount"].mean(), 2)
+amt_leg   = round(df[df["Class"] == 0]["Amount"].mean(), 2)
+fraude_max = round(df[df["Class"] == 1]["Amount"].max(), 2)
+fraude_min = round(df[df["Class"] == 1]["Amount"].min(), 2)
 
-print(f"Dataset cargado: {total:,} transacciones")
-print(f"Fraudes: {fraudes} ({pct}%) | Ratio: {ratio}:1")
+# -- Calcular distribucion por hora -----------------------
+df["hora"] = (df["Time"] / 3600 % 24).astype(int)
+fraudes_por_hora = (
+    df[df["Class"] == 1]
+    .groupby("hora").size()
+    .reindex(range(24), fill_value=0)
+)
+hora_pico = int(fraudes_por_hora.idxmax())
+pico_cant = int(fraudes_por_hora.max())
 
-# -- System prompt con datos REALES del CSV ---------------
-# Este contexto se envia en CADA mensaje -> eso es el RAG
+# -- Muestra REAL del dataset (50 fraudes + 150 legitimas)
+# Seleccionamos columnas mas relevantes para no exceder tokens
+cols_importantes = ["Time", "V1", "V4", "V10", "V12", "V14", "V17", "Amount", "Class"]
+muestra = pd.concat([
+    df[df["Class"] == 1][cols_importantes].head(50),   # 50 fraudes reales
+    df[df["Class"] == 0][cols_importantes].head(150),  # 150 legitimas reales
+]).sample(frac=1, random_state=42).reset_index(drop=True)
+
+muestra["hora"] = (muestra["Time"] / 3600 % 24).round(1)
+muestra = muestra.drop(columns=["Time"])
+muestra_txt = muestra.round(3).to_string(index=True)
+
+print("=" * 55)
+print("  FRAUDBOT - Mini-RAG con DeepSeek")
+print("  (con muestra real del dataset)")
+print("=" * 55)
+print(f"  Dataset: {total:,} filas | {fraudes} fraudes ({pct}%)")
+print(f"  Enviando 200 filas reales a DeepSeek...")
+print(f"  Hora pico de fraude: {hora_pico:02d}:00h ({pico_cant} fraudes)")
+print("=" * 55)
+
+# -- System prompt con muestra REAL -----------------------
 SYSTEM_PROMPT = f"""
 Eres FraudBot, analista de fraude de un banco dominicano.
-Responde preguntas sobre el dataset y el modelo de ML.
+Tienes acceso a una muestra REAL del dataset de transacciones.
+Responde SIEMPRE basandote en los datos que ves — no inventes.
 
-DATASET (creditcard.csv - cargado en vivo):
-- {total:,} transacciones reales de tarjetas europeas
-- {fraudes} fraudes - el {pct}% del total
+ESTADISTICAS GENERALES DEL DATASET COMPLETO ({csv}):
+- {total:,} transacciones totales | {fraudes} fraudes ({pct}%)
 - Ratio: {ratio}:1 (legitimas vs fraudes)
 - Monto promedio fraude: ${amt_fraud} | legitima: ${amt_leg}
-- Columnas: Time, V1-V28 (PCA anonimizados), Amount, Class
+- Fraude maximo: ${fraude_max} | minimo: ${fraude_min}
+- Hora pico de fraude: {hora_pico:02d}:00h ({pico_cant} fraudes en esa hora)
 
-MODELOS ENTRENADOS:
-- Random Forest, XGBoost, Logistica + SMOTE
-- Recall ~84% | Precision ~88% | AUC-ROC ~0.98
-- Umbral de decision: 0.3 (mas sensible al fraude)
+DISTRIBUCION POR HORA (fraudes del dataset completo):
+{chr(10).join([f"  {h:02d}:00h -> {int(fraudes_por_hora[h])} fraudes" for h in range(24)])}
 
-CONCEPTOS CLAVE:
-- Recall: % de fraudes reales detectados (prioridad maxima)
-- Accuracy: inutil - predecir todo como legitimo da {100-pct}%
-- SMOTE: genera fraudes sinteticos SOLO en train, nunca test
-- Umbral 0.3: captura mas fraudes, pero genera mas alertas
+MUESTRA REAL DE 200 FILAS (50 fraudes + 150 legitimas):
+Columnas: hora(del dia), V1,V4,V10,V12,V14,V17(patrones PCA), Amount(monto), Class(0=legitima,1=fraude)
+NOTA: V14 y V17 muy negativos son señal fuerte de fraude.
 
-Responde en espanol, claro y con ejemplos. Max 3 parrafos.
+{muestra_txt}
+
+Responde en espanol. Usa los datos reales de la muestra.
+Cuando cites un patron di en que fila lo ves. Max 4 parrafos.
 """
 
-# -- Chat con memoria -------------------------------------
 historial = []
 
 def preguntar(pregunta):
+    print(f"\n  Pregunta: {pregunta}")
+    print(f"  {'─' * 51}")
     historial.append({"role": "user", "content": pregunta})
     r = client.chat.completions.create(
         model       = "deepseek-chat",
         messages    = [{"role": "system", "content": SYSTEM_PROMPT}] + historial,
-        max_tokens  = 400,
-        temperature = 0.3
+        max_tokens  = 600,
+        temperature = 0.3,
     )
     respuesta = r.choices[0].message.content
     historial.append({"role": "assistant", "content": respuesta})
-    print(f"FraudBot: {respuesta}\n")
+    print(f"  FraudBot: {respuesta}\n")
     return respuesta
 
-# -- 5 preguntas de prueba --------------------------------
-# Cada una muestra algo distinto del poder del RAG:
+print("\n  Iniciando preguntas...\n")
 
-# 1. Usa los numeros REALES del CSV que acabas de cargar
-preguntar(f"Tengo {total:,} transacciones y solo {fraudes} son fraudes. "
-          f"Como afecta ese desbalance al entrenamiento?")
+# 1. Horario con mas fraudes — el bot ve los datos reales
+preguntar(
+    "Mirando la muestra del dataset, en que horarios ocurren mas fraudes? "
+    "Dame los rangos de hora con mas actividad fraudulenta y cuantos hay en cada uno."
+)
 
-# 2. Pregunta de negocio — no tecnica
-preguntar("Si el modelo no detecta un fraude de $500, "
-          "cuanto le cuesta al banco vs bloquear una tarjeta buena?")
+# 2. Patron de montos — el bot analiza Amount vs Class
+preguntar(
+    f"Analiza los montos de las transacciones fraudulentas vs legitimas en la muestra. "
+    f"El fraude promedio es ${amt_fraud} pero hay desde ${fraude_min} hasta ${fraude_max}. "
+    f"Que patron ves en los montos de los fraudes?"
+)
 
-# 3. Usa las stats reales del sistema prompt
-preguntar(f"El monto promedio de fraude es ${amt_fraud} y el legitimo ${amt_leg}. "
-          f"Por que los fraudes no son siempre las transacciones mas grandes?")
+# 3. Impacto real en dinero — entendible para cualquier persona
+preguntar(
+    f"Con {fraudes} fraudes en el dataset y un monto promedio de ${amt_fraud} cada uno, "
+    f"cuanto dinero perderia un banco dominicano en un mes si su modelo "
+    f"no detecta el 16% de los fraudes? "
+    f"Explica el impacto en terminos simples para que lo entienda alguien "
+    f"que no sabe de tecnologia."
+)
 
-# 4. El argumento que todo CEO necesita escuchar
-preguntar("Tengo un modelo con 99.8% de Accuracy pero el banco dice que es inutil. "
-          "Como le explico por que ese numero miente?")
+print("=" * 55)
+print("  Fin. El bot respondio basandose en datos reales.")
+print("  Agrega mas preguntar() para seguir explorando.")
+print("=" * 55)
 
-# 5. La pregunta que conecta el lab con el mundo real
-preguntar("El modelo funciona bien en el test. "
-          "Cuales son los 3 problemas principales al ponerlo en produccion?")
 ''',
             language="python",
         )
