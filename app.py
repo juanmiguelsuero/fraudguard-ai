@@ -1109,7 +1109,17 @@ except Exception:
 def build_dataset_context(_df):
     fraudes = _df[_df["Class"] == 1]
     legitimas = _df[_df["Class"] == 0]
-    ctx = "=== DATASET creditcard.csv ===\n"
+    _csv_file = (
+        "creditcard_mini.csv"
+        if os.path.exists("creditcard_mini.csv")
+        else "creditcard.csv"
+    )
+    ctx = f"=== DATASET {_csv_file} ===\n"
+    _csv_name = (
+        "creditcard_mini.csv"
+        if os.path.exists("creditcard_mini.csv")
+        else "creditcard.csv"
+    )
     ctx += f"Total: {len(_df):,} | Legítimas: {len(legitimas):,} | Fraudes: {len(fraudes):,} ({len(fraudes)/len(_df)*100:.3f}%)\n"
     ctx += f"Monto promedio FRAUDE: ${fraudes['Amount'].mean():.2f} | mediana: ${fraudes['Amount'].median():.2f} | máx: ${fraudes['Amount'].max():.2f}\n"
     ctx += f"Monto promedio LEGÍTIMA: ${legitimas['Amount'].mean():.2f} | mediana: ${legitimas['Amount'].median():.2f} | máx: ${legitimas['Amount'].max():.2f}\n"
@@ -4992,7 +5002,7 @@ with tab13:
         "import warnings\n"
         "warnings.filterwarnings('ignore')\n\n"
         "# Dataset: kaggle.com/datasets/mlg-ulb/creditcardfraud\n"
-        "df = pd.read_csv('creditcard.csv')\n\n"
+        "df = pd.read_csv('creditcard_mini.csv')  # o creditcard.csv si tienes el completo\n\n"
         "print(f'Total:   {len(df):,} transacciones')\n"
         'print(f\'Fraudes: {df["Class"].sum():,} ({df["Class"].mean()*100:.3f}%)\')\n'
         "print(f'Features: {df.shape[1]-1}')"
