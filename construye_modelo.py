@@ -679,7 +679,7 @@ letter-spacing:1px;margin:16px 0 8px;'>📋 Código para tu máquina:</p>
 padding:10px 14px;margin-bottom:10px;'>
 <b style='color:#00c2ff;'>💡 Recomendado:</b>
 <span style='color:#a0b4cc;'> Descarga el archivo directamente — no lo copies para evitar errores.</span><br>
-<a href='https://raw.githubusercontent.com/juanmiguelsuero/fraudguard-ai/main/pruebaRag.py'
+<a href='https://raw.githubusercontent.com/juanmiguelsuero/fraudguard-ai/main/PruebaRag.py'
    style='display:inline-block;background:#0d2248;color:#00c2ff;border:1px solid #00c2ff;
    font-size:12px;font-weight:700;padding:6px 16px;border-radius:8px;
    text-decoration:none;margin-top:8px;'
