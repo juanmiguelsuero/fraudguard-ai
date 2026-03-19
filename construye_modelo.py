@@ -675,6 +675,18 @@ Responde en español, claro y con ejemplos. Máximo 3 párrafos.\
             """
 <p style='color:#c084fc;font-size:13px;font-weight:700;
 letter-spacing:1px;margin:16px 0 8px;'>📋 Código para tu máquina:</p>
+<div style='background:#0a1a2a;border:1px solid #00c2ff44;border-radius:8px;
+padding:10px 14px;margin-bottom:10px;'>
+<b style='color:#00c2ff;'>💡 Recomendado:</b>
+<span style='color:#a0b4cc;'> Descarga el archivo directamente — no lo copies para evitar errores.</span><br>
+<a href='https://raw.githubusercontent.com/juanmiguelsuero/fraudguard-ai/main/pruebaRag.py'
+   style='display:inline-block;background:#0d2248;color:#00c2ff;border:1px solid #00c2ff;
+   font-size:12px;font-weight:700;padding:6px 16px;border-radius:8px;
+   text-decoration:none;margin-top:8px;'
+   download>
+   ⬇️ Descargar pruebaRag.py
+</a>
+</div>
 <div style='background:#1a0a2a;border:1px solid #c084fc55;border-radius:8px;
 padding:10px 14px;margin:8px 0;font-size:13px;'>
 <b style='color:#00c46a;'>🔑 API Key incluida — lista para usar durante la charla</b><br>
