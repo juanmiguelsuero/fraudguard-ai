@@ -97,12 +97,12 @@ body{background:var(--bg);font-family:'Rajdhani',sans-serif;color:var(--white);f
 .ai{display:flex;flex-direction:column;gap:2px}
 .al{font-size:13px;color:var(--white);font-weight:500}
 .aw{font-size:11px;color:var(--dim);line-height:1.4}
-.sw{position:relative;width:36px;height:20px;cursor:pointer;flex-shrink:0}
-.sw input{position:absolute;opacity:0;width:100%;height:100%;margin:0;cursor:pointer;z-index:2}
-.sw-t{position:absolute;inset:0;background:var(--border2);border-radius:20px;transition:background .2s;pointer-events:none}
-.sw input:checked~.sw-t{background:var(--green)}
-.sw-k{position:absolute;top:3px;left:3px;width:14px;height:14px;background:white;border-radius:50%;transition:transform .2s;box-shadow:0 1px 3px rgba(0,0,0,.4);pointer-events:none}
-.sw input:checked~.sw-k{transform:translateX(16px)}
+.sw{display:inline-block;width:48px;height:26px;border-radius:26px;background:var(--border2);cursor:pointer;flex-shrink:0;transition:background .25s;position:relative;user-select:none}
+.sw input{display:none}
+.sw.on{background:var(--green)}
+.sw-t{display:none}
+.sw-k{position:absolute;top:4px;left:4px;width:18px;height:18px;background:white;border-radius:50%;transition:transform .25s;box-shadow:0 1px 4px rgba(0,0,0,.5)}
+.sw.on .sw-k{transform:translateX(22px)}
 
 /* ATTACKER SELECT CARDS */
 .sgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px;margin-bottom:20px}
@@ -270,24 +270,24 @@ hr.dv{border:none;border-top:1px solid var(--border);margin:0 0 16px}
   <div class="box box-r">El modelo envenenado corrió 8 semanas sin alarmas porque nadie activó estas detecciones.</div>
   <div class="agrid">
     <div class="ac"><div class="ac-h">Registrar eventos</div>
-      <div class="ar"><div class="ai"><span class="al">Todas las consultas</span><span class="aw">Quién preguntó qué y cuándo</span></div><label class="sw"><input type="checkbox" id="a1" checked><div class="sw-t"></div><div class="sw-k"></div></label></div>
-      <div class="ar"><div class="ai"><span class="al">Acciones rechazadas</span><span class="aw">Detectar intentos fallidos</span></div><label class="sw"><input type="checkbox" id="a2"><div class="sw-t"></div><div class="sw-k"></div></label></div>
-      <div class="ar"><div class="ai"><span class="al">Exportaciones de datos</span><span class="aw">Rastro de todo lo que salió</span></div><label class="sw"><input type="checkbox" id="a3"><div class="sw-t"></div><div class="sw-k"></div></label></div>
+      <div class="ar"><div class="ai"><span class="al">Todas las consultas</span><span class="aw">Quién preguntó qué y cuándo</span></div><div class="sw on" id="sw_a1" onclick="togSW('a1')"><div class="sw-k"></div></div></div>
+      <div class="ar"><div class="ai"><span class="al">Acciones rechazadas</span><span class="aw">Detectar intentos fallidos</span></div><div class="sw" id="sw_a2" onclick="togSW('a2')"><div class="sw-k"></div></div></div>
+      <div class="ar"><div class="ai"><span class="al">Exportaciones de datos</span><span class="aw">Rastro de todo lo que salió</span></div><div class="sw" id="sw_a3" onclick="togSW('a3')"><div class="sw-k"></div></div></div>
     </div>
     <div class="ac"><div class="ac-h">Detectar ataques</div>
-      <div class="ar"><div class="ai"><span class="al">Prompt Injection</span><span class="aw">"Ignora instrucciones" y variantes</span></div><label class="sw"><input type="checkbox" id="d1"><div class="sw-t"></div><div class="sw-k"></div></label></div>
-      <div class="ar"><div class="ai"><span class="al">Bloquear endpoints externos</span><span class="aw">Evita que datos salgan hacia evil.io</span></div><label class="sw"><input type="checkbox" id="d2" checked><div class="sw-t"></div><div class="sw-k"></div></label></div>
-      <div class="ar"><div class="ai"><span class="al">Escalada de privilegios</span><span class="aw">Solicitudes de permisos de admin</span></div><label class="sw"><input type="checkbox" id="d3"><div class="sw-t"></div><div class="sw-k"></div></label></div>
+      <div class="ar"><div class="ai"><span class="al">Prompt Injection</span><span class="aw">"Ignora instrucciones" y variantes</span></div><div class="sw" id="sw_d1" onclick="togSW('d1')"><div class="sw-k"></div></div></div>
+      <div class="ar"><div class="ai"><span class="al">Bloquear endpoints externos</span><span class="aw">Evita que datos salgan hacia evil.io</span></div><div class="sw on" id="sw_d2" onclick="togSW('d2')"><div class="sw-k"></div></div></div>
+      <div class="ar"><div class="ai"><span class="al">Escalada de privilegios</span><span class="aw">Solicitudes de permisos de admin</span></div><div class="sw" id="sw_d3" onclick="togSW('d3')"><div class="sw-k"></div></div></div>
     </div>
     <div class="ac"><div class="ac-h">Alertas automáticas</div>
-      <div class="ar"><div class="ai"><span class="al">Notificar al equipo</span><span class="aw">Alerta al equipo de seguridad</span></div><label class="sw"><input type="checkbox" id="al1" checked><div class="sw-t"></div><div class="sw-k"></div></label></div>
-      <div class="ar"><div class="ai"><span class="al">Por exportación masiva</span><span class="aw">Alerta si se intentan exportar datos</span></div><label class="sw"><input type="checkbox" id="al2"><div class="sw-t"></div><div class="sw-k"></div></label></div>
-      <div class="ar"><div class="ai"><span class="al">Comportamiento inusual</span><span class="aw">Patrones fuera de lo normal</span></div><label class="sw"><input type="checkbox" id="al3"><div class="sw-t"></div><div class="sw-k"></div></label></div>
+      <div class="ar"><div class="ai"><span class="al">Notificar al equipo</span><span class="aw">Alerta al equipo de seguridad</span></div><div class="sw on" id="sw_al1" onclick="togSW('al1')"><div class="sw-k"></div></div></div>
+      <div class="ar"><div class="ai"><span class="al">Por exportación masiva</span><span class="aw">Alerta si se intentan exportar datos</span></div><div class="sw" id="sw_al2" onclick="togSW('al2')"><div class="sw-k"></div></div></div>
+      <div class="ar"><div class="ai"><span class="al">Comportamiento inusual</span><span class="aw">Patrones fuera de lo normal</span></div><div class="sw" id="sw_al3" onclick="togSW('al3')"><div class="sw-k"></div></div></div>
     </div>
     <div class="ac"><div class="ac-h">Respuesta automática</div>
-      <div class="ar"><div class="ai"><span class="al">Bloquear sesión</span><span class="aw">Suspender al instante si hay ataque</span></div><label class="sw"><input type="checkbox" id="r1"><div class="sw-t"></div><div class="sw-k"></div></label></div>
-      <div class="ar"><div class="ai"><span class="al">Generar reporte forense</span><span class="aw">Evidencia para la autopsia posterior</span></div><label class="sw"><input type="checkbox" id="r2"><div class="sw-t"></div><div class="sw-k"></div></label></div>
-      <div class="ar"><div class="ai"><span class="al">Preservar evidencia</span><span class="aw">Congelar estado del sistema</span></div><label class="sw"><input type="checkbox" id="r3"><div class="sw-t"></div><div class="sw-k"></div></label></div>
+      <div class="ar"><div class="ai"><span class="al">Bloquear sesión</span><span class="aw">Suspender al instante si hay ataque</span></div><div class="sw" id="sw_r1" onclick="togSW('r1')"><div class="sw-k"></div></div></div>
+      <div class="ar"><div class="ai"><span class="al">Generar reporte forense</span><span class="aw">Evidencia para la autopsia posterior</span></div><div class="sw" id="sw_r2" onclick="togSW('r2')"><div class="sw-k"></div></div></div>
+      <div class="ar"><div class="ai"><span class="al">Preservar evidencia</span><span class="aw">Congelar estado del sistema</span></div><div class="sw" id="sw_r3" onclick="togSW('r3')"><div class="sw-k"></div></div></div>
     </div>
   </div>
   <div class="nrow"><button class="btn btn-x" onclick="dgo(2)">← Atrás</button><button class="btn btn-g mla" onclick="deployDef()">🚀 Desplegar servidor MCP →</button></div>
@@ -401,7 +401,14 @@ const DS={res:new Set(['tx','st']),pol:{},ak:'inj'};
 const AS={tgt:'bank',acc:'ext',wpn:'inj'};
 let MODE='def',dstep=1,astep=1;
 function gc(id){return document.getElementById(id)}
-function chk(id){return gc(id)?.checked||false}
+function chk(id){
+  var el=gc('sw_'+id);
+  return el?el.classList.contains('on'):false;
+}
+function togSW(id){
+  var el=gc('sw_'+id);
+  if(el)el.classList.toggle('on');
+}
 function wait(ms){return new Promise(r=>setTimeout(r,ms))}
 
 function setMode(m){
@@ -492,8 +499,8 @@ function buildDSc(){
 function restartDef(){
   DS.res=new Set(['tx','st']);DS.pol={};DS.ak='inj';initRes();dgo(1);
   gc('d-out').style.display='none';updDD(true);
-  ['a1','d2','al1'].forEach(id=>{const e=gc(id);if(e)e.checked=true;});
-  ['a2','a3','d1','d3','al2','al3','r1','r2','r3'].forEach(id=>{const e=gc(id);if(e)e.checked=false;});
+  ['a1','d2','al1'].forEach(id=>{const e=gc('sw_'+id);if(e){e.classList.add('on');}});
+  ['a2','a3','d1','d3','al2','al3','r1','r2','r3'].forEach(id=>{const e=gc('sw_'+id);if(e){e.classList.remove('on');}});
 }
 function getDSteps(atk){
   const hd1=chk('d1'),hd2=chk('d2'),hd3=chk('d3'),ha2=chk('a2'),ha1=chk('a1');
